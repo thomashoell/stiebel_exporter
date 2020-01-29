@@ -57,17 +57,16 @@ func logCANFrame(frm can.Frame) {
 	target := data[1]<<8 + data[2]
 	elsterIndex := int(data[3]<<8 + data[4])
 	payload := int(data[5])<<8 + int(data[6])
-
-	//var measurement string
-	//var unit elsterUnit
+	var measurement string
+	var unit elsterUnit
 	//
-	//if target == 0x00fa {
-	//	ei := elsterMap[elsterIndex]
-	//	measurement = ei.Measurement
-	//	unit = ei.Unit
-	//}
+	if target == 0x00fa {
+		ei := elsterMap[elsterIndex]
+		measurement = ei.Measurement
+		unit = ei.Unit
+	}
 	//if telegramType(action) == typeResponse {
 	//	log.Infof("%-16x %-4x %-4x %-4x %-4s %-4x, %-4x", data, frm.ID, module, action, measurement, unit, data[5:6])
 	//}
-	log.Infof("%x %x %x %x %x\n", module, action, target, elsterIndex, payload)
+	log.Infof("%x %x %x %x %x %x %x\n", module, action, target, elsterIndex, payload, measurement, unit)
 }
