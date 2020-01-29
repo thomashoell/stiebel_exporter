@@ -26,7 +26,7 @@ var numeric float64
 
 func main() {
 
-	log.SetLevel(log.DebugLevel)
+	log.SetLevel(log.InfoLevel)
 
 	device = "can0"
 	sender = 0x680
