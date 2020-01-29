@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/brutella/can"
 )
@@ -30,7 +30,7 @@ func LogFrame(frm can.Frame) {
 		}
 	}
 
-	log.Println(formatted)
+	log.Info(formatted)
 }
 
 func LogRegisterValue(val interface{}, r *ElsterReading) {

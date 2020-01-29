@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"time"
 
@@ -70,7 +70,7 @@ func readRegister(
 	case frm := <-c:
 		// result
 		duration := time.Since(startTime)
-		log.Printf("CAN read took: %.fms", duration.Seconds()*1e3)
+		log.Infof("CAN read took: %.fms", duration.Seconds()*1e3)
 		return &frm
 	}
 }

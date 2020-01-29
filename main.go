@@ -29,6 +29,9 @@ func main() {
 	log.SetLevel(log.DebugLevel)
 
 	device = "can0"
+	sender = 0x680
+	receiver = 0x180
+	command = scan
 
 	bus, err := can.NewBusForInterfaceWithName(device)
 	if err != nil {
