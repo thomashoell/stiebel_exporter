@@ -53,7 +53,7 @@ func init() {
 		{"AUSSENTEMP", 0x000c, et_dec_val},
 		{"SAMMLERISTTEMP", 0x000d, et_dec_val}, // ev. KESSELISTTEMP
 		{"SPEICHERISTTEMP", 0x000e, et_dec_val},
-		{"VORLAUFISTTEMP", 0x000f, et_dec_val},
+		{"VORLAUFISTTEMP", 0x000f, 0},
 		{"GERAETEKONFIGURATION", 0x0010, 0},
 		{"RAUMISTTEMP", 0x0011, et_dec_val},
 		{"VERSTELLTE_RAUMSOLLTEMP", 0x0012, et_dec_val},

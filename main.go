@@ -22,7 +22,6 @@ var sender uint16
 var receiver uint16
 var register uint16
 var value uint16
-var numeric float64
 
 func main() {
 
@@ -30,7 +29,7 @@ func main() {
 
 	device = "can0"
 	sender = 0x680
-	receiver = 0x180
+	receiver = 0x500
 	command = scan
 
 	bus, err := can.NewBusForInterfaceWithName(device)
@@ -45,7 +44,7 @@ func main() {
 	go func() {
 		select {
 		case <-quit:
-			bus.Disconnect()
+			_ = bus.Disconnect()
 			os.Exit(1)
 		}
 	}()

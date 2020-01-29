@@ -5,7 +5,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"time"
-
 	"github.com/brutella/can"
 )
 
@@ -62,7 +61,7 @@ func readRegister(
 	defer bus.Unsubscribe(handler)
 
 	startTime := time.Now()
-	bus.Publish(*frm)
+	_ = bus.Publish(*frm)
 	select {
 	case <-time.After(100 * time.Millisecond):
 		// timeout

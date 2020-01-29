@@ -2,9 +2,8 @@ package main
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/brutella/can"
+	log "github.com/sirupsen/logrus"
 )
 
 var RawLog bool
@@ -35,7 +34,7 @@ func LogFrame(frm can.Frame) {
 
 func LogRegisterValue(val interface{}, r *ElsterReading) {
 	valStr := ValueString(val)
-	formatted := fmt.Sprintf("%04X %-24s %11s", r.Index, left(r.Name, 20), valStr)
+	formatted := fmt.Sprintf("%04X %-48s %11s", r.Index, left(r.Name, 20), valStr)
 	fmt.Println(formatted)
 }
 
