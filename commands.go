@@ -63,7 +63,7 @@ func readRegister(
 	startTime := time.Now()
 	_ = bus.Publish(*frm)
 	select {
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(250 * time.Millisecond):
 		// timeout
 		return nil
 	case frm := <-c:

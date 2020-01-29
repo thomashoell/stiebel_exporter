@@ -34,7 +34,7 @@ func LogFrame(frm can.Frame) {
 
 func LogRegisterValue(val interface{}, r *ElsterReading) {
 	valStr := ValueString(val)
-	formatted := fmt.Sprintf("%04X %-48s %11s", r.Index, left(r.Name, 20), valStr)
+	formatted := fmt.Sprintf("%04X %-48s %11s", r.Index, left(r.Name, 44), valStr)
 	fmt.Println(formatted)
 }
 
