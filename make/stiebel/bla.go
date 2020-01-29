@@ -73,5 +73,5 @@ func handleCANFrame(frm can.Frame) {
 	//if telegramType(action) == typeResponse {
 	//	log.Infof("%-16x %-4x %-4x %-4x %-4s %-4x, %-4x", data, frm.ID, module, action, measurement, unit, data[5:6])
 	//}
-	log.Infof("%x %x %x %x %x %s %x\n", module, action, target, elsterIndex, payload, measurement, unit)
+	log.Infof("%02x %02x %04x %04x %04x %s %x\n", module, action, target, elsterIndex, payload, measurement, unit)
 }

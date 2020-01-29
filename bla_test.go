@@ -37,5 +37,5 @@ func Test4(t *testing.T) {
 		fmt.Println("Elster")
 	}
 
-	fmt.Printf("%x %x %x %x %x\n", module, action, target, elsterIndex, payload)
+	fmt.Printf("%02x %02x %04x %04x %04x\n", module, action, target, elsterIndex, payload)
 }
