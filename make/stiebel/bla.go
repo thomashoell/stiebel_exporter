@@ -32,7 +32,7 @@ func DoSomething() {
 	//	}
 	//}()
 
-	bus.SubscribeFunc(logCANFrame)
+	bus.SubscribeFunc(handleCANFrame)
 
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt)
@@ -50,13 +50,18 @@ func DoSomething() {
 	_ = bus.ConnectAndPublish()
 }
 
-func logCANFrame(frm can.Frame) {
+func handleCANFrame(frm can.Frame) {
 	data := frm.Data
 	module := data[0] >> 4
+	if module != 0xd {
+
+		return
+	}
+
 	action := data[0] & 0x0F
-	target := data[1]<<8 + data[2]
-	elsterIndex := int(data[3]<<8 + data[4])
-	payload := int(data[5])<<8 + int(data[6])
+	target := uint16(data[1])<<8 + uint16(data[2])
+	elsterIndex := uint16(data[3])<<8 + uint16(data[4])
+	payload := uint16(data[5])<<8 + uint16(data[6])
 	var measurement string
 	var unit elsterUnit
 	//

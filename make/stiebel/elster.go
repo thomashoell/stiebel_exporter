@@ -2,7 +2,7 @@ package stiebel
 
 type elsterTableEntry struct {
 	Measurement string
-	ID          int
+	ID          uint16
 	Unit        elsterUnit
 }
 
@@ -14,7 +14,7 @@ type language int
 
 func init() {
 	// declare map for lookup by ID/opcode
-	elsterMap = make(map[int]elsterTableEntry)
+	elsterMap = make(map[uint16]elsterTableEntry)
 
 	for i := range elsterTable {
 		ei := elsterTable[i]
@@ -23,7 +23,7 @@ func init() {
 }
 
 var (
-	elsterMap = map[int]elsterTableEntry{}
+	elsterMap = map[uint16]elsterTableEntry{}
 
 	elsterTable = [...]elsterTableEntry{
 		{"KESSELSOLLTEMP", 0x0001, unitDefault},

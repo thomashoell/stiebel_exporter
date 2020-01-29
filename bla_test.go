@@ -25,13 +25,13 @@ func Test3(t *testing.T) {
 }
 
 func Test4(t *testing.T) {
-	data := [...]byte{0x31, 0x00, 0xfa, 0xfe, 0x1e, 0x00, 0x00, 0x00}
+	data := [...]byte{0xd2, 0x00, 0xfa, 0x01, 0xd6, 0x02, 0x0d, 0x00}
 	fmt.Printf("%x\n", data)
 	module := data[0] >> 4
 	action := data[0] & 0x0F
-	target := int(data[1])<<8 + int(data[2])
-	elsterIndex := int(data[3])<<8 + int(data[4])
-	payload := int(data[5])<<8 + int(data[6])
+	target := uint16(data[1])<<8 + uint16(data[2])
+	elsterIndex := uint16(data[3])<<8 + uint16(data[4])
+	payload := uint16(data[5])<<8 + uint16(data[6])
 
 	if target == 0x00fa {
 		fmt.Println("Elster")
