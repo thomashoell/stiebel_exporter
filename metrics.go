@@ -44,11 +44,6 @@ func GatherMetrics(bus *can.Bus) {
 	_ = bus.ConnectAndPublish()
 }
 
-func gatherBasicInfo(bus *can.Bus) {
-
-	const receiver = 0x500
-}
-
 func metricsHandler(frm can.Frame) {
 	data := trimSuffix(frm.Data[:], 0x00)
 	length := fmt.Sprintf("[%x]", frm.Length)
@@ -67,7 +62,20 @@ func metricsHandler(frm can.Frame) {
 
 	if data[0]&Data != 0 {
 		if r := Reading(reg); r != nil {
+
+			switch r.Name {
+			case "KESSELSOLLTEMP":
+				log.Info("kessel yo")
+			}
+
 			val := DecodeValue(payload, r.Type)
+
+			if val == nil {
+				return
+			}
+
+
+
 			valStr := ValueString(val)
 
 			formatted += fmt.Sprintf("%-24s %11s", left(r.Name, 20), valStr)
