@@ -60,7 +60,7 @@ func main() {
 		}
 	}()
 
-	GetMetrics()
+	GatherMetrics(bus)
 
 	switch command {
 	case dump:
