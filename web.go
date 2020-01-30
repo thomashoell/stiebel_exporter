@@ -9,13 +9,13 @@ import (
 
 var Router *mux.Router
 
-func init () {
+func init() {
 	Router = mux.NewRouter().UseEncodedPath()
 	Router.StrictSlash(true)
 	Router.Handle("/metrics", Handler())
 }
 
-func StartServer() *http.Server{
+func StartServer() *http.Server {
 	port := 9000
 	listenAddr := fmt.Sprintf(":%d", port)
 
@@ -32,7 +32,9 @@ func StartServer() *http.Server{
 		//ReadTimeout:  15 * time.Second,
 	}
 
-	go log.Fatal(srv.ListenAndServe())
+	go func() {
+		log.Fatal(srv.ListenAndServe())
+	}()
 	log.Infof("Listening on %s", listenAddr)
 
 	return srv
