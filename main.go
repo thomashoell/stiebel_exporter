@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/brutella/can"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -41,10 +42,20 @@ func main() {
 	signal.Notify(quit, os.Interrupt)
 	signal.Notify(quit, os.Kill)
 
+	srv := StartServer()
+
 	go func() {
 		select {
 		case <-quit:
 			_ = bus.Disconnect()
+
+			ctx := context.Background()
+			if err := srv.Shutdown(ctx); err != nil {
+				log.Error("failed to shut down server properly", err)
+			} else {
+				log.Info("server was shut down properly")
+			}
+
 			os.Exit(1)
 		}
 	}()
