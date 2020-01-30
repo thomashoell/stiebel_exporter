@@ -60,6 +60,8 @@ func main() {
 		}
 	}()
 
+	GetMetrics()
+
 	switch command {
 	case dump:
 		CanDump(bus)
