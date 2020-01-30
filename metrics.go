@@ -15,6 +15,7 @@ type MetricsContainer struct {
 
 const (
 	namespace = "stiebel"
+	sender    = 0x680
 )
 
 var (
@@ -44,7 +45,7 @@ func GatherMetrics(bus *can.Bus) {
 }
 
 func gatherBasicInfo(bus *can.Bus) {
-	const sender = 0x680
+
 	const receiver = 0x500
 }
 
@@ -54,6 +55,11 @@ func metricsHandler(frm can.Frame) {
 
 	chars := fmt.Sprintf("'%s'", printableString(data[:]))
 	rcvr := ReceiverId(frm.Data[:2])
+
+	if rcvr != sender {
+		return
+	}
+
 	formatted := fmt.Sprintf("%-4x %-3s % -24X %-10s %6x ", frm.ID, length, data, chars, rcvr)
 
 	reg, payload := Payload(data)

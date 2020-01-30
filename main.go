@@ -8,30 +8,13 @@ import (
 	"os/signal"
 )
 
-type Command int
-
-const (
-	dump Command = iota
-	scan
-	read
-	write
-)
-
-var command Command
 var device string
-var sender uint16
-var receiver uint16
-var register uint16
-var value uint16
 
 func main() {
 
 	log.SetLevel(log.InfoLevel)
 
 	device = "can0"
-	sender = 0x680
-	receiver = 0x500
-	command = scan
 
 	bus, err := can.NewBusForInterfaceWithName(device)
 	if err != nil {
@@ -61,15 +44,4 @@ func main() {
 	}()
 
 	GatherMetrics(bus)
-
-	switch command {
-	case dump:
-		CanDump(bus)
-	case scan:
-		CanScan(bus, sender, receiver)
-	case read:
-		CanRead(bus, sender, receiver, register)
-	case write:
-		CanWrite(bus, sender, receiver, register, value)
-	}
 }
