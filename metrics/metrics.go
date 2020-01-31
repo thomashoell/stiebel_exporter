@@ -37,10 +37,20 @@ func GatherMetrics(bus *can.Bus) {
 		}
 	}()
 
-
 	_ = bus.ConnectAndPublish()
 }
 
 func metricsHandler(frm can.Frame) {
-	stiebel.LogFrame(frm)
+	rcvr := stiebel.ReceiverId(frm.Data[:2])
+
+	switch rcvr {
+	case stiebel.Heizmodul:
+		HandleHeaterResponse(frm)
+	case stiebel.Manager:
+		HandleManagerResponse(frm)
+	case stiebel.Kessel:
+		HandleBoilerResponse(frm)
+	default:
+		stiebel.LogFrame(frm)
+	}
 }

@@ -27,6 +27,10 @@ func registerHeaterMetrics(r *prometheus.Registry) {
 	r.MustRegister(returnTemperature)
 }
 
+func HandleHeaterResponse(c can.Frame) {
+	log.Info("Hi from heater")
+}
+
 func GatherHeaterMetrics(bus *can.Bus) {
 	readMetricAndUpdateGauge(bus, flowTemperature, 0x01D6)
 	readMetricAndUpdateGauge(bus, returnTemperature, 0x0016)
