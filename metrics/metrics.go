@@ -44,7 +44,7 @@ func metricsHandler(frm can.Frame) {
 	data := frm.Data[:]
 
 	if data[0]&stiebel.Response == 0{
-		log.Info("not a response")
+		log.Debug("not a response")
 		return
 	}
 
@@ -58,6 +58,6 @@ func metricsHandler(frm can.Frame) {
 	case stiebel.Kessel:
 		HandleBoilerResponse(frm)
 	default:
-		stiebel.LogFrame(frm)
+		//stiebel.LogFrame(frm)
 	}
 }

@@ -28,9 +28,9 @@ func registerHeaterMetrics(r *prometheus.Registry) {
 }
 
 func HandleHeaterResponse(data []uint8) {
-	log.Info("Hi from heater")
 
 	reg, _ := stiebel.Payload(data)
+	log.Infof("Hi from heater, %v", reg)
 
 	switch reg {
 	case 0x0016:
