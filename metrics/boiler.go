@@ -45,8 +45,10 @@ func HandleBoilerResponse(data []uint8) {
 	switch reg {
 	case 0x0016:
 		boilerReturnTemperature.Set(val.(float64))
+		log.Infof("return flow temp is %f", val.(float64))
 	case 0x01D6:
 		boilerFlowTemperature.Set(val.(float64))
+		log.Infof("flow temp is %f", val.(float64))
 		//default:
 		//	log.Infof("boiler register %x", reg)
 	}
