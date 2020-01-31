@@ -8,6 +8,16 @@ import (
 	"wlp_exporter/stiebel"
 )
 
+const (
+	day = "day"
+	total = "total"
+	wh = "WH"
+	kwh = "kWH"
+	mwh = "MWH"
+	water = "water"
+	heat = "heat"
+)
+
 var (
 	boilerFlowTemperature = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
@@ -34,8 +44,17 @@ var (
 	})
 	electricalPowerConsumed = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
-		Name:      "electrical_power_consumption_watt_hours_total",
+		Name:      "electrical_power_consumption_watt_hours",
 		Help:      "The total amount of electrical power consumed.",
+	}, []string{
+		"time_frame",
+		"magnitude",
+		"component",
+	})
+	heatProduced = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Name:      "heat_produced_watt_hours",
+		Help:      "The total amount of heat generated.",
 	}, []string{
 		"time_frame",
 		"magnitude",
@@ -49,6 +68,7 @@ func registerBoilerMetrics(r *prometheus.Registry) {
 	r.MustRegister(outdoorTemperature)
 	r.MustRegister(tankTemperature)
 	r.MustRegister(electricalPowerConsumed)
+	r.MustRegister(heatProduced)
 }
 
 func handleBoilerResponse(data []uint8) {
@@ -81,39 +101,37 @@ func handleBoilerResponse(data []uint8) {
 		tankTemperature.Set(val.(float64))
 		log.Infof("tank temp is %f", val.(float64))
 	case 0x091A:
-		electricalPowerConsumed.WithLabelValues("day", "WH", "water").Set(float64(binary.BigEndian.Uint16(payload)))
-		log.Infof("El. Aufnahme WW Tag WH %d", binary.BigEndian.Uint16(payload))
+		electricalPowerConsumed.WithLabelValues(day, wh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x091B:
-		log.Infof("El. Aufnahme WW Tag kWH %d", binary.BigEndian.Uint16(payload))
+		electricalPowerConsumed.WithLabelValues(day, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x091C:
-		log.Infof("El. Aufnahme WW Sum kWH %d", binary.BigEndian.Uint16(payload))
+		electricalPowerConsumed.WithLabelValues(total, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x091D:
-		log.Infof("El. Aufnahme WW Sum MWH %d", binary.BigEndian.Uint16(payload))
+		electricalPowerConsumed.WithLabelValues(total, mwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x091E:
-		log.Infof("El. Aufnahme Heiz Tag WH %d", binary.BigEndian.Uint16(payload))
+		electricalPowerConsumed.WithLabelValues(day, wh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x091F:
-		log.Infof("El. Aufnahme Heiz Tag kWH %d", binary.BigEndian.Uint16(payload))
+		electricalPowerConsumed.WithLabelValues(day, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x0920:
-		log.Infof("El. Aufnahme Heiz Sum kWH %d", binary.BigEndian.Uint16(payload))
+		electricalPowerConsumed.WithLabelValues(total, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x0921:
-		log.Infof("El. Aufnahme Heiz Sum MWH %d", binary.BigEndian.Uint16(payload))
-
+		electricalPowerConsumed.WithLabelValues(total, mwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x092A:
-		log.Infof("Ertrag WW Tag WH %d", binary.BigEndian.Uint16(payload))
+		heatProduced.WithLabelValues(day, wh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x092B:
-		log.Infof("Ertrag WW Tag kWH %d", binary.BigEndian.Uint16(payload))
+		heatProduced.WithLabelValues(day, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x092C:
-		log.Infof("Ertrag WW Sum kWH %d", binary.BigEndian.Uint16(payload))
+		heatProduced.WithLabelValues(total, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x092D:
-		log.Infof("Ertrag WW Sum MWH %d", binary.BigEndian.Uint16(payload))
+		heatProduced.WithLabelValues(total, mwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x092E:
-		log.Infof("Ertrag Heiz Tag WH %d", binary.BigEndian.Uint16(payload))
+		heatProduced.WithLabelValues(day, wh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x092F:
-		log.Infof("Ertrag Heiz Tag kWH %d", binary.BigEndian.Uint16(payload))
+		heatProduced.WithLabelValues(day, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x0930:
-		log.Infof("Ertrag Heiz Sum kWH %d", binary.BigEndian.Uint16(payload))
+		heatProduced.WithLabelValues(total, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x0931:
-		log.Infof("Ertrag Heiz Sum MWH %d", binary.BigEndian.Uint16(payload))
+		heatProduced.WithLabelValues(total, mwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	default:
 		log.Debugf("boiler register %x unhandled", reg)
 	}
