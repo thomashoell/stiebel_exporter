@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"encoding/binary"
 	"github.com/brutella/can"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
@@ -80,9 +81,9 @@ func handleBoilerResponse(data []uint8) {
 		tankTemperature.Set(val.(float64))
 		log.Infof("tank temp is %f", val.(float64))
 	case 0x091A:
-		log.Infof("El. Aufnahme WW Tag WH %x", payload)
+		log.Infof("El. Aufnahme WW Tag WH %d", binary.BigEndian.Uint16(payload))
 	case 0x091B:
-		log.Infof("El. Aufnahme WW Tag kWH %x", payload)
+		log.Infof("El. Aufnahme WW Tag kWH %d", binary.BigEndian.Uint16(payload))
 	case 0x091C:
 		log.Infof("El. Aufnahme WW Sum kWH %x", payload)
 	case 0x091D:
