@@ -15,6 +15,12 @@ var (
 		Name:      "hot_gas_temperature_celsius",
 		Help:      "Hot gas temperature.",
 	})
+	condenserTemperature = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: heater,
+		Name:      "condenser_temperature_celsius",
+		Help:      "Condenser temperature.",
+	})
 )
 
 func handleHeaterResponse(data []uint8) {
@@ -56,6 +62,8 @@ func handleHeaterResponse(data []uint8) {
 		compressorSpeedRpm.WithLabelValues(compressor2).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x0265:
 		hotGasTemperature.Set(val.(float64))
+	case 0x034f:
+		condenserTemperature.Set(float64(binary.BigEndian.Uint16(payload)))
 	default:
 		log.Debugf("heater register %x unhandled", reg)
 	}
@@ -78,4 +86,6 @@ func requestHeaterMetrics(bus *can.Bus) {
 
 	// Kühlmitteltemperaturen
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0265)) // Heissgastemperatur
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x034f)) // Verfluessigertemperatur
+
 }
