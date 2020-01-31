@@ -52,6 +52,13 @@ var (
 		"component",
 		"heat_generator",
 	})
+	compressorSpeedRpm = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Name:      "compressor_speed_rpm",
+		Help:      "The compressor's revolutions per minute.",
+	}, []string{
+		"unit",
+	})
 )
 
 func handleBoilerResponse(data []uint8) {

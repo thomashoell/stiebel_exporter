@@ -16,15 +16,17 @@ const (
 	boiler    = "boiler"
 	manager   = "manager"
 
-	day   = "day"
-	total = "total"
-	wh    = "WH"
-	kwh   = "kWH"
-	mwh   = "MWH"
-	water = "water"
-	heat  = "heat"
-	we1   = "1"
-	we2   = "2"
+	day         = "day"
+	total       = "total"
+	wh          = "WH"
+	kwh         = "kWH"
+	mwh         = "MWH"
+	water       = "water"
+	heat        = "heat"
+	we1         = "1"
+	we2         = "2"
+	compressor1 = "1"
+	compressor2 = "2"
 )
 
 var (
@@ -55,13 +57,15 @@ func GatherMetrics(bus *can.Bus) {
 	_ = bus.ConnectAndPublish()
 }
 
-func registerMetrics(){
+func registerMetrics() {
 	registry.MustRegister(boilerFlowTemperature)
 	registry.MustRegister(boilerReturnTemperature)
 	registry.MustRegister(outdoorTemperature)
 	registry.MustRegister(tankTemperature)
 	registry.MustRegister(electricalPowerConsumed)
 	registry.MustRegister(heatProduced)
+	registry.MustRegister(compressorSpeedRpm)
+	registry.MustRegister(hotGasTemperature)
 }
 
 func metricsHandler(frm can.Frame) {

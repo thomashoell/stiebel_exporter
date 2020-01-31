@@ -3,10 +3,19 @@ package metrics
 import (
 	"encoding/binary"
 	"github.com/brutella/can"
+	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"wlp_exporter/stiebel"
 )
 
+var (
+	hotGasTemperature = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: heater,
+		Name:      "hot_gas_temperature_celsius",
+		Help:      "Hot gas temperature.",
+	})
+)
 
 func handleHeaterResponse(data []uint8) {
 	reg, payload := stiebel.Payload(data)
@@ -41,6 +50,12 @@ func handleHeaterResponse(data []uint8) {
 		heatProduced.WithLabelValues(total, kwh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x0929:
 		heatProduced.WithLabelValues(total, mwh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+	case 0x063E:
+		compressorSpeedRpm.WithLabelValues(compressor1).Set(float64(binary.BigEndian.Uint16(payload)))
+	case 0x063F:
+		compressorSpeedRpm.WithLabelValues(compressor2).Set(float64(binary.BigEndian.Uint16(payload)))
+	case 0x0265:
+		hotGasTemperature.Set(val.(float64))
 	default:
 		log.Debugf("heater register %x unhandled", reg)
 	}
@@ -56,5 +71,11 @@ func requestHeaterMetrics(bus *can.Bus) {
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0927)) // Waermeertrag Heiz Tag kWH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0928)) // Waermeertrag Heiz Sum kWH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0929)) // Waermeertrag Heiz Sum MWH
-}
 
+	// Drehzahl Verdichter
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x063E)) // Verdichter 1
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x063F)) // Verdichter 2
+
+	// Kühlmitteltemperaturen
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0265)) // Heissgastemperatur
+}
