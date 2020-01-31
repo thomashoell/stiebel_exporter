@@ -3,6 +3,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+	"strconv"
 	"wlp_exporter/stiebel"
 )
 
@@ -42,13 +43,13 @@ func HandleBoilerResponse(data []uint8) {
 		return
 	}
 
-	v := val.(float64)
+	log.Infof("val: %v", val, val)
 
 	switch reg {
 	case 0x0016:
-		boilerReturnTemperature.Set(v)
+		//boilerReturnTemperature.Set(v)
 	case 0x01D6:
-		boilerFlowTemperature.Set(v)
+		//boilerFlowTemperature.Set(v)
 	//default:
 	//	log.Infof("boiler register %x", reg)
 	}
