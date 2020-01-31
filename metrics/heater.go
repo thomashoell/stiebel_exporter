@@ -36,8 +36,8 @@ func HandleHeaterResponse(data []uint8) {
 		log.Infof("heater rücklauf ist %v", val)
 	case 0x01D6:
 		log.Infof("heater vorlauf ist %v", val)
-	//default:
-	//	log.Info("unknown register")
+	default:
+		log.Infof("heater register %x", reg)
 	}
 }
 

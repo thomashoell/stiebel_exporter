@@ -14,7 +14,7 @@ func HandleBoilerResponse(data []uint8) {
 		log.Infof("boiler rücklauf ist %v", val)
 	case 0x01D6:
 		log.Infof("boiler vorlauf ist %v", val)
-		//default:
-		//	log.Info("unknown register")
+	default:
+		log.Infof("boiler register %x", reg)
 	}
 }
