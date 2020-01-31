@@ -3,11 +3,10 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	"strconv"
 	"wlp_exporter/stiebel"
 )
 
-var(
+var (
 	boilerFlowTemperature = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: boiler,
@@ -50,7 +49,7 @@ func HandleBoilerResponse(data []uint8) {
 		//boilerReturnTemperature.Set(v)
 	case 0x01D6:
 		//boilerFlowTemperature.Set(v)
-	//default:
-	//	log.Infof("boiler register %x", reg)
+		//default:
+		//	log.Infof("boiler register %x", reg)
 	}
 }
