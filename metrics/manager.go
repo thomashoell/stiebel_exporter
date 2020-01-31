@@ -14,7 +14,7 @@ func HandleManagerResponse(data []uint8) {
 		log.Infof("manager rücklauf ist %v", val)
 	case 0x01D6:
 		log.Infof("manager vorlauf ist %v", val)
-	default:
-		log.Infof("manager register %x", reg)
+	//default:
+	//	log.Infof("manager register %x", reg)
 	}
 }
