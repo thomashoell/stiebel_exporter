@@ -56,7 +56,7 @@ func metricsHandler(frm can.Frame) {
 	case 0x01D6:
 		stiebel.LogFrame(frm)
 		//log.Infof("vorlauf ist, %x, %x", payload, data[0])
-	default:
-		log.Infof("unhandled register %v", stiebel.Reading(reg))
+	//default:
+	//	log.Infof("unhandled register %v", stiebel.Reading(reg))
 	}
 }
