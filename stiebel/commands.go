@@ -19,7 +19,7 @@ func createReadFrame(sender uint16, receiver uint16, r *ElsterReading) *can.Fram
 func ReadRegister(bus *can.Bus, sender uint16, receiver uint16, r *ElsterReading, ) {
 	frm := createReadFrame(sender, receiver, r)
 
-	for err, retry := bus.Publish(*frm), 0; err != nil || retry < 3; err, retry = bus.Publish(*frm), retry+1 {
+	for err, retry := bus.Publish(*frm), 0; err != nil && retry < 3; err, retry = bus.Publish(*frm), retry+1 {
 		log.Error("error publishing frame on the CAN bus, backing off", retry)
 		//time.Sleep(100 * time.Millisecond)
 	}
