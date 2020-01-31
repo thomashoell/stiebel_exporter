@@ -66,7 +66,6 @@ func registerMetrics() {
 	registry.MustRegister(heatProduced)
 	registry.MustRegister(compressorSpeedRpm)
 	registry.MustRegister(hotGasTemperature)
-	registry.MustRegister(condenserTemperature)
 }
 
 func metricsHandler(frm can.Frame) {
