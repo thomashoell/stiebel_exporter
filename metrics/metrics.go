@@ -12,7 +12,9 @@ import (
 
 const (
 	namespace = "stiebel"
-	heater    = "heizmodul"
+	heater    = "heater"
+	boiler    = "boiler"
+	manager   = "manager"
 )
 
 var (
@@ -27,8 +29,10 @@ func Handler() http.Handler {
 }
 
 func GatherMetrics(bus *can.Bus) {
-	registerHeaterMetrics(registry)
+	registerBoilerMetrics(registry)
+
 	bus.SubscribeFunc(metricsHandler)
+
 	log.Info("starting to gather metrics")
 	go func() {
 		for true {
