@@ -12,19 +12,24 @@ var (
 		Namespace: namespace,
 		Subsystem: boiler,
 		Name:      "flow_temperature_celsius",
-		Help:      "Flow temperature in Celsius",
+		Help:      "Flow temperature as reported by the boiler in degrees Celsius.",
 	})
 	boilerReturnTemperature = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
 		Subsystem: boiler,
 		Name:      "return_temperature_celsius",
-		Help:      "Return temperature in Celsius",
+		Help:      "Return temperature as reported by the boiler in degrees Celsius.",
 	})
 	outdoorTemperature = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: namespace,
-		Subsystem: boiler,
 		Name:      "outdoor_temperature_celsius",
-		Help:      "Temperature measured by the external sensor",
+		Help:      "Temperature measured by the external sensor in degrees Celsius.",
+	})
+	tankTemperature = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: namespace,
+		Subsystem: boiler,
+		Name:      "tank_temperature_celsius",
+		Help:      "Temperature of the water in the tank as reported by the boiler in degrees Celsius.",
 	})
 )
 
@@ -32,6 +37,7 @@ func registerBoilerMetrics(r *prometheus.Registry) {
 	r.MustRegister(boilerFlowTemperature)
 	r.MustRegister(boilerReturnTemperature)
 	r.MustRegister(outdoorTemperature)
+	r.MustRegister(tankTemperature)
 }
 
 func handleBoilerResponse(data []uint8) {
@@ -60,6 +66,9 @@ func handleBoilerResponse(data []uint8) {
 	case 0x000C:
 		outdoorTemperature.Set(val.(float64))
 		log.Infof("outdoor temp is %f", val.(float64))
+	case 0x000E:
+		tankTemperature.Set(val.(float64))
+		log.Infof("tank temp is %f", val.(float64))
 	default:
 		log.Debugf("boiler register %x unhandled", reg)
 	}
@@ -69,4 +78,5 @@ func requestBoilerMetrics(bus *can.Bus) {
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0016))
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x01D6))
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x000C))
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x000E))
 }
