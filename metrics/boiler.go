@@ -80,7 +80,7 @@ func handleBoilerResponse(data []uint8) {
 		tankTemperature.Set(val.(float64))
 		log.Infof("tank temp is %f", val.(float64))
 	case 0x091A:
-		log.Infof("El. Aufnahme WW Tag WH %f", val.(float64))
+		log.Infof("El. Aufnahme WW Tag WH %f", val.(uint16))
 	default:
 		log.Debugf("boiler register %x unhandled", reg)
 	}
