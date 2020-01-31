@@ -102,28 +102,28 @@ func handleBoilerResponse(data []uint8) {
 
 func requestBoilerMetrics(bus *can.Bus) {
 	// Temperaturen
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0016)) // Rücklauftemperatur
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x01D6)) // Vorlauftemperatur
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x000C)) // Aussentemperatur
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x000E)) // Speichertemperatur
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0016)) // Rücklauftemperatur
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x01D6)) // Vorlauftemperatur
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x000C)) // Aussentemperatur
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x000E)) // Speichertemperatur
 
 	// Stromaufnahme
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091A)) // El. Aufnahme WW Tag WH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091B)) // El. Aufnahme WW Tag kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091C)) // El. Aufnahme WW Sum kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091D)) // El. Aufnahme WW Sum MWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091A)) // El. Aufnahme WW Tag WH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091B)) // El. Aufnahme WW Tag kWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091C)) // El. Aufnahme WW Sum kWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091D)) // El. Aufnahme WW Sum MWH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091E)) // El. Aufnahme Heiz Tag WH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x091F)) // El. Aufnahme Heiz Tag kWH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0920)) // El. Aufnahme Heiz Sum kWH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0921)) // El. Aufnahme Heiz Sum MWH
 
 	// Waermeertrag
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092A)) // Waermeertrag WW Tag WH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092B)) // Waermeertrag WW Tag kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092C)) // Waermeertrag WW Sum kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092D)) // Waermeertrag WW Sum MWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092E)) // Waermeertrag Heiz Tag WH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092F)) // Waermeertrag Heiz Tag kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0930)) // Waermeertrag Heiz Sum kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0931)) // Waermeertrag Heiz Sum MWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092A)) // Waermeertrag WW Tag WH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092B)) // Waermeertrag WW Tag kWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092C)) // Waermeertrag WW Sum kWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092D)) // Waermeertrag WW Sum MWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092E)) // Waermeertrag Heiz Tag WH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092F)) // Waermeertrag Heiz Tag kWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0930)) // Waermeertrag Heiz Sum kWH
+	//stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0931)) // Waermeertrag Heiz Sum MWH
 }
