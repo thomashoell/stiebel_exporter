@@ -1,4 +1,4 @@
-package main
+package stiebel
 
 import (
 	"bytes"
@@ -32,10 +32,34 @@ import (
 
 const (
 	// byte 0
-	Request byte = 0x01
-	Data    byte = 0x02
+	// Request Type
+	Write         byte = 0x00
+	Read          byte = 0x01
+	Response      byte = 0x02
+	Ack           byte = 0x03
+	WriteAck      byte = 0x04
+	WriteRespond  byte = 0x05
+	System        byte = 0x06
+	SystemRespond byte = 0x07
 	// byte 1
 	Broadcast byte = 0x79
+)
+
+// Receiver IDs
+// see https://github.com/Hunv/can2mqtt/blob/master/can2mqtt_core/can2mqtt_core/Translator/StiebelEltron/StiebelEltron.cs
+const (
+	Direkt          uint16 = 0x000
+	Kessel          uint16 = 0x180
+	Atez            uint16 = 0x280
+	Bedienmodul     uint16 = 0x300 // ggf auch 301, 302 und 303)
+	Raumfernfuehler uint16 = 0x400
+	Manager         uint16 = 0x480
+	Heizmodul       uint16 = 0x500
+	Buskoppler      uint16 = 0x580
+	Mischermodul    uint16 = 0x600 // ggf auch 601, 602, 603 (wpwm controller)
+	PC              uint16 = 0x680 // ComfortSoft, ggf auch 6A1, 6A2
+	Fremdgeraet     uint16 = 0x700
+	DCFModul        uint16 = 0x780
 )
 
 func ReceiverId(b []byte) uint16 {
@@ -170,7 +194,7 @@ func EncodeReceiver(b []byte, receiverId uint16, requestType byte) {
 func RequestFrame(receiverId uint16, reading *ElsterReading) []byte {
 	b := make([]byte, 8)
 
-	EncodeReceiver(b, receiverId, Request)
+	EncodeReceiver(b, receiverId, Read)
 	EncodeRegister(b, reading.Index)
 
 	return b
@@ -179,7 +203,7 @@ func RequestFrame(receiverId uint16, reading *ElsterReading) []byte {
 func DataFrame(receiverId uint16, val interface{}, reading *ElsterReading) []byte {
 	b := make([]byte, 8)
 
-	EncodeReceiver(b, receiverId, Data)
+	EncodeReceiver(b, receiverId, Response)
 	valIdx := EncodeRegister(b, reading.Index)
 	copy(b[valIdx:], EncodeValue(val, reading.Type))
 

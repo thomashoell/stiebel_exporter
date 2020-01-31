@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
+	"wlp_exporter/metrics"
 )
 
 var device string
@@ -43,5 +44,5 @@ func main() {
 		}
 	}()
 
-	GatherMetrics(bus)
+	metrics.GatherMetrics(bus)
 }

@@ -1,11 +1,15 @@
-package main
+package stiebel
 
 import (
 	"fmt"
+	"github.com/brutella/can"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"time"
-	"github.com/brutella/can"
+)
+
+const(
+	ReadRegisterTimeoutMillies = 250
 )
 
 func CanDump(bus *can.Bus) {
@@ -28,7 +32,7 @@ func makeScanMatcher(
 			// requested register?
 			if reg, _ := Payload(frm.Data[:]); reg == register {
 				// data frame?
-				if frm.Data[0]&Data != 0 {
+				if frm.Data[0]&Response != 0 {
 					c <- frm
 				}
 			}
@@ -63,7 +67,7 @@ func readRegister(
 	startTime := time.Now()
 	_ = bus.Publish(*frm)
 	select {
-	case <-time.After(250 * time.Millisecond):
+	case <-time.After(ReadRegisterTimeoutMillies * time.Millisecond):
 		// timeout
 		return nil
 	case frm := <-c:

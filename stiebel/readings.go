@@ -1,4 +1,4 @@
-package main
+package stiebel
 
 type ElsterType int
 

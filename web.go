@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"wlp_exporter/metrics"
 )
 
 var Router *mux.Router
@@ -12,7 +13,7 @@ var Router *mux.Router
 func init() {
 	Router = mux.NewRouter().UseEncodedPath()
 	Router.StrictSlash(true)
-	Router.Handle("/metrics", Handler())
+	Router.Handle("/metrics", metrics.Handler())
 }
 
 func StartServer() *http.Server {

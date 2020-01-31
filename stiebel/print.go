@@ -1,4 +1,4 @@
-package main
+package stiebel
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ func LogFrame(frm can.Frame) {
 	reg, payload := Payload(data)
 	formatted += fmt.Sprintf("%04X ", reg)
 
-	if data[0]&Data != 0 {
+	if data[0]&Response != 0 {
 		if r := Reading(reg); r != nil {
 			val := DecodeValue(payload, r.Type)
 			valStr := ValueString(val)
