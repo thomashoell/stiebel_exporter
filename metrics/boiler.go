@@ -82,7 +82,11 @@ func handleBoilerResponse(data []uint8) {
 	case 0x091A:
 		log.Infof("El. Aufnahme WW Tag WH %v", val)
 	case 0x091B:
-		log.Infof("El. Aufnahme kWW Tag WH %v", val)
+		log.Infof("El. Aufnahme WW Tag kWH %v", val)
+	case 0x091C:
+		log.Infof("El. Aufnahme WW Sum kWH %v", val)
+	case 0x091D:
+		log.Infof("El. Aufnahme kWW Sum MWH %v", val)
 	default:
 		log.Debugf("boiler register %x unhandled", reg)
 	}
