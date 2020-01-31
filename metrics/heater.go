@@ -29,14 +29,15 @@ func registerHeaterMetrics(r *prometheus.Registry) {
 
 func HandleHeaterResponse(data []uint8) {
 
-	reg, _ := stiebel.Payload(data)
-	log.Infof("Hi from heater, %v", reg)
+	reg, payload := stiebel.Payload(data)
 
 	switch reg {
 	case 0x0016:
-		log.Info("rücklauf ist")
-	default:
-		log.Info("unknown register")
+		log.Infof("heater rücklauf ist %v", payload)
+	case 0x01D6:
+		log.Infof("heater vorlauf ist %v", payload)
+	//default:
+	//	log.Info("unknown register")
 	}
 }
 

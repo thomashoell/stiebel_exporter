@@ -43,8 +43,8 @@ func GatherMetrics(bus *can.Bus) {
 func metricsHandler(frm can.Frame) {
 	data := frm.Data[:]
 
-	if data[0]&stiebel.Response == 0{
-		log.Info("not a response")
+	// not a response
+	if data[0]&stiebel.Response == 0 {
 		return
 	}
 
@@ -54,10 +54,10 @@ func metricsHandler(frm can.Frame) {
 	case stiebel.Heizmodul:
 		HandleHeaterResponse(data)
 	case stiebel.Manager:
-		HandleManagerResponse(frm)
+		HandleManagerResponse(data)
 	case stiebel.Kessel:
-		HandleBoilerResponse(frm)
-	default:
-		stiebel.LogFrame(frm)
+		HandleBoilerResponse(data)
+	//default:
+	//	stiebel.LogFrame(frm)
 	}
 }
