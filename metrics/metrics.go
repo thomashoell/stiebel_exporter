@@ -48,16 +48,17 @@ func metricsHandler(frm can.Frame) {
 		return
 	}
 
-	rcvr := stiebel.ReceiverId(frm.Data[:2])
+	//rcvr := stiebel.ReceiverId(frm.Data[:2])
+	sender := uint16(frm.ID)
 
-	switch rcvr {
+	switch sender {
 	case stiebel.Heizmodul:
 		HandleHeaterResponse(data)
 	case stiebel.Manager:
 		HandleManagerResponse(data)
 	case stiebel.Kessel:
 		HandleBoilerResponse(data)
-	//default:
-	//	stiebel.LogFrame(frm)
+		//default:
+		//	stiebel.LogFrame(frm)
 	}
 }
