@@ -3,6 +3,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
+	"reflect"
 	"wlp_exporter/stiebel"
 )
 
@@ -42,7 +43,7 @@ func HandleBoilerResponse(data []uint8) {
 		return
 	}
 
-	log.Infof("val: %v", val, val)
+	log.Infof("val: %v, type: %v", val, val.(reflect.Type))
 
 	switch reg {
 	case 0x0016:
