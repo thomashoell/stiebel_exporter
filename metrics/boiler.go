@@ -95,6 +95,25 @@ func handleBoilerResponse(data []uint8) {
 		log.Infof("El. Aufnahme Heiz Sum kWH %v", val)
 	case 0x0921:
 		log.Infof("El. Aufnahme Heiz Sum MWH %v", val)
+
+
+
+	case 0x092A:
+		log.Infof("Ertrag WW Tag WH %v", val)
+	case 0x092B:
+		log.Infof("Ertrag WW Tag kWH %v", val)
+	case 0x092C:
+		log.Infof("Ertrag WW Sum kWH %v", val)
+	case 0x092D:
+		log.Infof("Ertrag WW Sum MWH %v", val)
+	case 0x092E:
+		log.Infof("Ertrag Heiz Tag WH %v", val)
+	case 0x092F:
+		log.Infof("Ertrag Heiz Tag kWH %v", val)
+	case 0x0930:
+		log.Infof("Ertrag Heiz Sum kWH %v", val)
+	case 0x0931:
+		log.Infof("Ertrag Heiz Sum MWH %v", val)
 	default:
 		log.Debugf("boiler register %x unhandled", reg)
 	}
