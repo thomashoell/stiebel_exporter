@@ -233,7 +233,7 @@ func init() {
 		// Vorrang:  0x0300
 		{"WARMWASSERMODE", 0x0135, et_little_endian},
 		{"ADAPT_INFO", 0x0136, 0},
-		{"KESSELSOLLTEMP_2WE", 0x0137, et_dec_val},
+		{"KESSELSOLLTEMP_2WE", 0x0137, et_dec_val}, // WE: Wärmeerzeuger
 		{"DURCHFLUSS_CH", 0x0139, 0},
 		{"STANDBY_GEBLAESE_DREHZAHL", 0x013a, 0},
 		{"BENOETIGTE_AUFHEIZZEIT", 0x013b, 0},
@@ -392,7 +392,7 @@ func init() {
 		{"LAUFZEIT_WP5", 0x01c8, 0},
 		{"LAUFZEIT_WP6", 0x01c9, 0},
 		{"LAUFZEIT_SOLAR", 0x01ca, 0},
-		{"LAUFZEIT_2WE", 0x01cb, 0},
+		{"LAUFZEIT_2WE", 0x01cb, 0}, // WE: Wärmeerzeuger
 		{"STILLSTANDZEIT_0", 0x01cc, 0},
 		{"STILLSTANDZEIT_1", 0x01cd, 0},
 		{"STILLSTANDZEIT_2", 0x01ce, 0},
@@ -845,8 +845,8 @@ func init() {
 		{"SOLAR_MAX_DREHZAHL_TEMP", 0x03b7, 0},
 		{"SOLAR_KOLLEKTOR_FREIGABETEMP", 0x03b8, 0},
 		{"SOLAR_KOLLEKTOR_SPERRTEMP", 0x03b9, 0},
-		{"SOLAR_FREIGABETEMP_2WE", 0x03ba, 0},
-		{"SOLAR_MAX_TEMP_2WE", 0x03bb, 0},
+		{"SOLAR_FREIGABETEMP_2WE", 0x03ba, 0}, // WE: Wärmeerzeuger
+		{"SOLAR_MAX_TEMP_2WE", 0x03bb, 0},     // WE: Wärmeerzeuger
 		{"SOLAR_KOLLEKTORSCHUTZTEMP", 0x03bc, et_dec_val},
 		{"SOLAR_SCHALTSCHWELLE_RUECKKUEHLUNG", 0x03bd, 0},
 		{"SOLAR_ZIRKPUMPE_EINSCHALTZEIT", 0x03be, 0},
@@ -2082,14 +2082,14 @@ func init() {
 		{"EL_AUFNAHMELEISTUNG_HEIZ_TAG_KWH", 0x091f, et_double_val},
 		{"EL_AUFNAHMELEISTUNG_HEIZ_SUM_KWH", 0x0920, 0},
 		{"EL_AUFNAHMELEISTUNG_HEIZ_SUM_MWH", 0x0921, et_double_val},
-		{"WAERMEERTRAG_2WE_WW_TAG_WH", 0x0922, 0},
-		{"WAERMEERTRAG_2WE_WW_TAG_KWH", 0x0923, et_double_val},
-		{"WAERMEERTRAG_2WE_WW_SUM_KWH", 0x0924, 0},
-		{"WAERMEERTRAG_2WE_WW_SUM_MWH", 0x0925, et_double_val},
-		{"WAERMEERTRAG_2WE_HEIZ_TAG_WH", 0x0926, 0},
-		{"WAERMEERTRAG_2WE_HEIZ_TAG_KWH", 0x0927, et_double_val},
-		{"WAERMEERTRAG_2WE_HEIZ_SUM_KWH", 0x0928, 0},
-		{"WAERMEERTRAG_2WE_HEIZ_SUM_MWH", 0x0929, et_double_val},
+		{"WAERMEERTRAG_2WE_WW_TAG_WH", 0x0922, 0},                // WE: Wärmeerzeuger
+		{"WAERMEERTRAG_2WE_WW_TAG_KWH", 0x0923, et_double_val},   // WE: Wärmeerzeuger
+		{"WAERMEERTRAG_2WE_WW_SUM_KWH", 0x0924, 0},               // WE: Wärmeerzeuger
+		{"WAERMEERTRAG_2WE_WW_SUM_MWH", 0x0925, et_double_val},   // WE: Wärmeerzeuger
+		{"WAERMEERTRAG_2WE_HEIZ_TAG_WH", 0x0926, 0},              // WE: Wärmeerzeuger
+		{"WAERMEERTRAG_2WE_HEIZ_TAG_KWH", 0x0927, et_double_val}, // WE: Wärmeerzeuger
+		{"WAERMEERTRAG_2WE_HEIZ_SUM_KWH", 0x0928, 0},             // WE: Wärmeerzeuger
+		{"WAERMEERTRAG_2WE_HEIZ_SUM_MWH", 0x0929, et_double_val}, // WE: Wärmeerzeuger
 		{"WAERMEERTRAG_WW_TAG_WH", 0x092a, 0},
 		{"WAERMEERTRAG_WW_TAG_KWH", 0x092b, et_double_val},
 		{"WAERMEERTRAG_WW_SUM_KWH", 0x092c, 0},
@@ -3643,9 +3643,9 @@ func init() {
 		// EVU Freigabe:         0x0100
 		{"ZWEITER_WE_STATUS", 0xfdba, 0},
 		{"WPSTUFEN_WW", 0xfdbb, et_little_endian},
-		{"WW_MIT_2WE", 0xfdbc, et_little_endian},
-		{"SPERREN_2WE", 0xfdbd, et_little_endian},
-		{"FREIGABE_2WE", 0xfdbe, et_little_endian},
+		{"WW_MIT_2WE", 0xfdbc, et_little_endian},   // WE: Wärmeerzeuger
+		{"SPERREN_2WE", 0xfdbd, et_little_endian},  // WE: Wärmeerzeuger
+		{"FREIGABE_2WE", 0xfdbe, et_little_endian}, // WE: Wärmeerzeuger
 		{"DYNAMIK", 0xfdbf, et_little_endian},
 		{"PARTYSTUNDEN", 0xfdc0, 0},
 		{"MANUELLES_ABTAUEN", 0xfdc1, 0},
