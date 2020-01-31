@@ -43,21 +43,16 @@ func GatherMetrics(bus *can.Bus) {
 func metricsHandler(frm can.Frame) {
 	data := frm.Data[:]
 
-	if data[0]&stiebel.Response == 0{
+	if data[0]&stiebel.Response == 0 {
 		log.Debug("not a response")
 		return
 	}
+	reg, payload := stiebel.Payload(data)
 
-	rcvr := stiebel.ReceiverId(frm.Data[:2])
-
-	switch rcvr {
-	case stiebel.Heizmodul:
-		HandleHeaterResponse(data)
-	case stiebel.Manager:
-		HandleManagerResponse(frm)
-	case stiebel.Kessel:
-		HandleBoilerResponse(frm)
+	switch reg {
+	case 0x0016:
+		log.Info("rücklauf ist, %x", payload)
 	default:
-		//stiebel.LogFrame(frm)
+		log.Info("unhandled register")
 	}
 }
