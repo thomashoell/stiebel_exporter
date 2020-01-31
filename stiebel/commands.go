@@ -3,6 +3,7 @@ package stiebel
 import (
 	"github.com/brutella/can"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 // createReadFrame constructs a CAN bus request frame
@@ -16,17 +17,13 @@ func createReadFrame(sender uint16, receiver uint16, r *ElsterReading) *can.Fram
 	return &frm
 }
 
-func ReadRegister(bus *can.Bus, sender uint16, receiver uint16, r *ElsterReading, ) {
+func ReadRegister(bus *can.Bus, sender uint16, receiver uint16, r *ElsterReading) {
 	frm := createReadFrame(sender, receiver, r)
 
-	for err, retry := bus.Publish(*frm), 0; err != nil && retry < 3; err, retry = bus.Publish(*frm), retry+1 {
+	// try to publish a frame on the bus. If that fails, back off at most 3 times for an increasing amount of time
+	for err, retry := bus.Publish(*frm), 1; err != nil && retry <= 3; err, retry = bus.Publish(*frm), retry+1 {
 		log.Error("error publishing frame on the CAN bus, backing off", retry)
-		//time.Sleep(100 * time.Millisecond)
+		time.Sleep(time.Duration(100*retry) * time.Millisecond)
 	}
-
-	err := bus.Publish(*frm)
-
-	if err != nil {
-		log.Error(err)
-	}
+	time.Sleep(50 * time.Millisecond) // give the bus a little time
 }
