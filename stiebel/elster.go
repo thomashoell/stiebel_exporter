@@ -78,10 +78,8 @@ func Payload(data []byte) (reg uint16, payload []byte) {
 }
 
 func Reading(register uint16) *ElsterReading {
-	for _, r := range ElsterReadings {
-		if r.Index == register {
-			return r
-		}
+	if val, ok := elsterIndex[register]; ok {
+		return val
 	}
 	return nil
 }

@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"github.com/brutella/can"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
 	"wlp_exporter/stiebel"
@@ -26,7 +27,7 @@ func registerBoilerMetrics(r *prometheus.Registry) {
 	r.MustRegister(boilerReturnTemperature)
 }
 
-func HandleBoilerResponse(data []uint8) {
+func handleBoilerResponse(data []uint8) {
 	reg, payload := stiebel.Payload(data)
 	r := stiebel.Reading(reg)
 
@@ -52,4 +53,9 @@ func HandleBoilerResponse(data []uint8) {
 		//default:
 		//	log.Infof("boiler register %x", reg)
 	}
+}
+
+func requestBoilerMetrics(bus *can.Bus) {
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0016))
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x01D6))
 }

@@ -28,7 +28,8 @@ type ElsterReading struct {
 	Type  ElsterType
 }
 
-var ElsterReadings []*ElsterReading
+var elsterReadings []*ElsterReading
+var elsterIndex map[uint16]*ElsterReading
 
 /**
  * Elster reading definitions from can_progs
@@ -38,7 +39,7 @@ var ElsterReadings []*ElsterReading
  */
 
 func init() {
-	ElsterReadings = []*ElsterReading{
+	elsterReadings = []*ElsterReading{
 		{"FEHLERMELDUNG", 0x0001, 0},
 		{"KESSELSOLLTEMP", 0x0002, et_dec_val},
 		{"SPEICHERSOLLTEMP", 0x0003, et_dec_val},
@@ -3718,5 +3719,9 @@ func init() {
 		{"INFOBLOCK_4", 0xfe05, 0},
 		{"INFOBLOCK_5", 0xfe06, 0},
 		{"INFOBLOCK_6", 0xfe07, 0},
+	}
+	elsterIndex = make(map[uint16]*ElsterReading)
+	for _, r := range elsterReadings {
+		elsterIndex[r.Index] = r
 	}
 }

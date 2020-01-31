@@ -36,7 +36,7 @@ func GatherMetrics(bus *can.Bus) {
 	log.Info("starting to gather metrics")
 	go func() {
 		for true {
-			//GatherHeaterMetrics(bus)
+			requestBoilerMetrics(bus)
 			time.Sleep(10 * time.Second)
 		}
 	}()
@@ -61,7 +61,7 @@ func metricsHandler(frm can.Frame) {
 	case stiebel.Manager:
 		HandleManagerResponse(data)
 	case stiebel.Kessel:
-		HandleBoilerResponse(data)
+		handleBoilerResponse(data)
 		//default:
 		//	stiebel.LogFrame(frm)
 	}
