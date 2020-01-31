@@ -47,7 +47,7 @@ func metricsHandler(frm can.Frame) {
 		log.Debug("not a response")
 		return
 	}
-	reg, payload := stiebel.Payload(data)
+	reg, _ := stiebel.Payload(data)
 
 	switch reg {
 	case 0x0016:
