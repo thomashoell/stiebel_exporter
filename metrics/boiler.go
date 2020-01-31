@@ -34,7 +34,7 @@ var (
 	})
 	electricalPowerConsumed = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
-		Name:      "electrical_power_consumption_watts_total",
+		Name:      "electrical_power_consumption_watt_hours_total",
 		Help:      "The total amount of electrical power consumed.",
 	}, []string{
 		"time_frame",
@@ -81,6 +81,7 @@ func handleBoilerResponse(data []uint8) {
 		tankTemperature.Set(val.(float64))
 		log.Infof("tank temp is %f", val.(float64))
 	case 0x091A:
+		electricalPowerConsumed.WithLabelValues("day", "WH", "water").Set(float64(binary.BigEndian.Uint16(payload)))
 		log.Infof("El. Aufnahme WW Tag WH %d", binary.BigEndian.Uint16(payload))
 	case 0x091B:
 		log.Infof("El. Aufnahme WW Tag kWH %d", binary.BigEndian.Uint16(payload))
@@ -96,8 +97,6 @@ func handleBoilerResponse(data []uint8) {
 		log.Infof("El. Aufnahme Heiz Sum kWH %d", binary.BigEndian.Uint16(payload))
 	case 0x0921:
 		log.Infof("El. Aufnahme Heiz Sum MWH %d", binary.BigEndian.Uint16(payload))
-
-
 
 	case 0x092A:
 		log.Infof("Ertrag WW Tag WH %d", binary.BigEndian.Uint16(payload))
