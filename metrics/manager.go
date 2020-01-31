@@ -14,7 +14,7 @@ func handleManagerResponse(data []uint8) {
 		log.Debugf("manager rücklauf ist %v", val)
 	case 0x01D6:
 		log.Debugf("manager vorlauf ist %v", val)
-	//default:
-	//	log.Infof("manager register %x", reg)
+	default:
+		log.Debugf("manager register %x unhandled", reg)
 	}
 }

@@ -73,16 +73,12 @@ func handleBoilerResponse(data []uint8) {
 	switch reg {
 	case 0x0016:
 		boilerReturnTemperature.Set(val.(float64))
-		log.Infof("return flow temp is %f", val.(float64))
 	case 0x01D6:
 		boilerFlowTemperature.Set(val.(float64))
-		log.Infof("flow temp is %f", val.(float64))
 	case 0x000C:
 		outdoorTemperature.Set(val.(float64))
-		log.Infof("outdoor temp is %f", val.(float64))
 	case 0x000E:
 		tankTemperature.Set(val.(float64))
-		log.Infof("tank temp is %f", val.(float64))
 	case 0x091A:
 		electricalPowerConsumed.WithLabelValues(day, wh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x091B:
