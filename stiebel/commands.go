@@ -2,6 +2,7 @@ package stiebel
 
 import (
 	"github.com/brutella/can"
+	log "github.com/sirupsen/logrus"
 )
 
 // createReadFrame constructs a CAN bus request frame
@@ -18,5 +19,9 @@ func createReadFrame(sender uint16, receiver uint16, r *ElsterReading) *can.Fram
 func ReadRegister(bus *can.Bus, sender uint16, receiver uint16, r *ElsterReading, ) {
 	frm := createReadFrame(sender, receiver, r)
 
-	_ = bus.Publish(*frm)
+	err := bus.Publish(*frm)
+
+	if err != nil {
+		log.Error(err)
+	}
 }
