@@ -41,6 +41,13 @@ func GatherMetrics(bus *can.Bus) {
 }
 
 func metricsHandler(frm can.Frame) {
+	data := frm.Data[:]
+
+	if data[0]&stiebel.Response == 0{
+		log.Info("not a response")
+		return
+	}
+
 	rcvr := stiebel.ReceiverId(frm.Data[:2])
 
 	switch rcvr {
