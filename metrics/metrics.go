@@ -28,17 +28,17 @@ func Handler() http.Handler {
 
 func GatherMetrics(bus *can.Bus) {
 	registerHeaterMetrics(registry)
-	//bus.SubscribeFunc(metricsHandler)
+	bus.SubscribeFunc(metricsHandler)
 	log.Info("starting to gather metrics")
-	//go func() {
+	go func() {
 		for true {
-			GatherHeaterMetrics(bus)
+			//GatherHeaterMetrics(bus)
 			time.Sleep(10 * time.Second)
 		}
-	//}()
+	}()
 
 
-	//_ = bus.ConnectAndPublish()
+	_ = bus.ConnectAndPublish()
 }
 
 func metricsHandler(frm can.Frame) {

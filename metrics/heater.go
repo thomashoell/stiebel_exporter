@@ -29,13 +29,13 @@ func registerHeaterMetrics(r *prometheus.Registry) {
 
 func GatherHeaterMetrics(bus *can.Bus) {
 	readMetricAndUpdateGauge(bus, flowTemperature, 0x01D6)
-	//readMetricAndUpdateGauge(bus, returnTemperature, 0x0016)
+	readMetricAndUpdateGauge(bus, returnTemperature, 0x0016)
 }
 
 func readMetricAndUpdateGauge(bus *can.Bus, gauge prometheus.Gauge, register uint16) {
 	val, err := stiebel.CanReadSynchronous(bus, stiebel.PC, stiebel.Heizmodul, register)
 	if err != nil {
-		log.Error("failed to read register %x", register)
+		log.Errorf("failed to read register %x", register)
 	}
 
 	switch v := val.(type) {
