@@ -6,8 +6,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var RawLog bool
-
 // LogFrame logs a frame with the same format as candump from can-utils.
 func LogFrame(frm can.Frame) {
 	data := trimSuffix(frm.Data[:], 0x00)

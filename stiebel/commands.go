@@ -1,14 +1,13 @@
 package stiebel
 
 import (
-	"fmt"
+	"errors"
 	"github.com/brutella/can"
 	log "github.com/sirupsen/logrus"
-	"os"
 	"time"
 )
 
-const(
+const (
 	ReadRegisterTimeoutMillies = 250
 )
 
@@ -77,31 +76,12 @@ func readRegister(
 		return &frm
 	}
 }
-
-func CanScan(bus *can.Bus, sender uint16, receiver uint16) {
-	go bus.ConnectAndPublish()
-	defer bus.Disconnect()
-
-	for _, r := range ElsterReadings {
-		if frm := readRegister(bus, sender, receiver, r); frm != nil {
-			_, payload := Payload(frm.Data[:])
-			val := DecodeValue(payload, r.Type)
-
-			if val != nil {
-				if RawLog {
-					LogFrame(*frm)
-				} else {
-					LogRegisterValue(val, r)
-				}
-			}
-		}
-	}
-}
-
-func CanRead(bus *can.Bus, sender uint16, receiver uint16, register uint16) {
+// reads a register in a blocking way
+func CanReadSynchronous(bus *can.Bus, sender uint16, receiver uint16, register uint16) (interface{}, error) {
 	r := Reading(register)
 	if r == nil {
-		log.Fatalf("Unknown register '%X'", register)
+		log.Errorf("Unknown register '%X'", register)
+		return nil, errors.New("failed to read register")
 	}
 
 	go bus.ConnectAndPublish()
@@ -109,19 +89,11 @@ func CanRead(bus *can.Bus, sender uint16, receiver uint16, register uint16) {
 
 	frm := readRegister(bus, sender, receiver, r)
 	if frm == nil {
-		os.Exit(1)
+		log.Error("failed to get response within specified timeout")
+		return nil, errors.New("failed to read register")
 	}
 
-	if RawLog {
-		LogFrame(*frm)
-	} else {
-		_, payload := Payload(frm.Data[:])
-		val := DecodeValue(payload, r.Type)
-		valStr := ValueString(val)
-		fmt.Println(valStr)
-	}
-}
-
-func CanWrite(bus *can.Bus, sender uint16, receiver uint16, register uint16, value uint16) {
-	log.Fatal("Not implemented")
+	_, payload := Payload(frm.Data[:])
+	val := DecodeValue(payload, r.Type)
+	return val, nil
 }
