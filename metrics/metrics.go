@@ -52,6 +52,8 @@ func metricsHandler(frm can.Frame) {
 	switch reg {
 	case 0x0016:
 		log.Infof("rücklauf ist, %x, %x", payload, data[0])
+	case 0x01D6:
+		log.Infof("vorlauf ist, %x, %x", payload, data[0])
 	default:
 		log.Infof("unhandled register %v", stiebel.Reading(reg))
 	}
