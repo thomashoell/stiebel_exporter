@@ -48,13 +48,13 @@ func handleHeaterResponse(data []uint8) {
 
 func requestHeaterMetrics(bus *can.Bus) {
 	// Waermeertrag WE2 (Zuheizer)
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0922)) // Waermeertrag WW Tag WH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0923)) // Waermeertrag WW Tag kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0924)) // Waermeertrag WW Sum kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0925)) // Waermeertrag WW Sum MWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0926)) // Waermeertrag Heiz Tag WH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0927)) // Waermeertrag Heiz Tag kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0928)) // Waermeertrag Heiz Sum kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0929)) // Waermeertrag Heiz Sum MWH
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0922)) // Waermeertrag WW Tag WH
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0923)) // Waermeertrag WW Tag kWH
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0924)) // Waermeertrag WW Sum kWH
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0925)) // Waermeertrag WW Sum MWH
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0926)) // Waermeertrag Heiz Tag WH
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0927)) // Waermeertrag Heiz Tag kWH
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0928)) // Waermeertrag Heiz Sum kWH
+	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Heizmodul, stiebel.Reading(0x0929)) // Waermeertrag Heiz Sum MWH
 }
 
