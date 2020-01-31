@@ -27,8 +27,17 @@ func registerHeaterMetrics(r *prometheus.Registry) {
 	r.MustRegister(returnTemperature)
 }
 
-func HandleHeaterResponse(c can.Frame) {
+func HandleHeaterResponse(data []uint8) {
 	log.Info("Hi from heater")
+
+	reg, _ := stiebel.Payload(data)
+
+	switch reg {
+	case 0x0016:
+		log.Info("rücklauf ist")
+	default:
+		log.Info("unknown register")
+	}
 }
 
 func GatherHeaterMetrics(bus *can.Bus) {

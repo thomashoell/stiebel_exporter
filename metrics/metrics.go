@@ -52,7 +52,7 @@ func metricsHandler(frm can.Frame) {
 
 	switch rcvr {
 	case stiebel.Heizmodul:
-		HandleHeaterResponse(frm)
+		HandleHeaterResponse(data)
 	case stiebel.Manager:
 		HandleManagerResponse(frm)
 	case stiebel.Kessel:
