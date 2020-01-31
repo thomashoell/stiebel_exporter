@@ -53,6 +53,6 @@ func metricsHandler(frm can.Frame) {
 	case 0x0016:
 		log.Infof("rücklauf ist, %x", payload)
 	default:
-		log.Infof("unhandled register %x", reg)
+		log.Infof("unhandled register %v", stiebel.Reading(reg))
 	}
 }
