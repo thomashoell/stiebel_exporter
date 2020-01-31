@@ -5,7 +5,7 @@ import (
 	"wlp_exporter/stiebel"
 )
 
-func HandleManagerResponse(data []uint8) {
+func handleManagerResponse(data []uint8) {
 	reg, payload := stiebel.Payload(data)
 	val := stiebel.ValueString(payload)
 

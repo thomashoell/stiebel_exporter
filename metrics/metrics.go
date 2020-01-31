@@ -15,6 +15,16 @@ const (
 	heater    = "heater"
 	boiler    = "boiler"
 	manager   = "manager"
+
+	day   = "day"
+	total = "total"
+	wh    = "WH"
+	kwh   = "kWH"
+	mwh   = "MWH"
+	water = "water"
+	heat  = "heat"
+	we1   = "1"
+	we2   = "2"
 )
 
 var (
@@ -29,7 +39,7 @@ func Handler() http.Handler {
 }
 
 func GatherMetrics(bus *can.Bus) {
-	registerBoilerMetrics(registry)
+	registerMetrics()
 
 	bus.SubscribeFunc(metricsHandler)
 
@@ -37,11 +47,21 @@ func GatherMetrics(bus *can.Bus) {
 	go func() {
 		for true {
 			requestBoilerMetrics(bus)
+			requestHeaterMetrics(bus)
 			time.Sleep(10 * time.Second)
 		}
 	}()
 
 	_ = bus.ConnectAndPublish()
+}
+
+func registerMetrics(){
+	registry.MustRegister(boilerFlowTemperature)
+	registry.MustRegister(boilerReturnTemperature)
+	registry.MustRegister(outdoorTemperature)
+	registry.MustRegister(tankTemperature)
+	registry.MustRegister(electricalPowerConsumed)
+	registry.MustRegister(heatProduced)
 }
 
 func metricsHandler(frm can.Frame) {
@@ -57,9 +77,9 @@ func metricsHandler(frm can.Frame) {
 
 	switch sender {
 	case stiebel.Heizmodul:
-		HandleHeaterResponse(data)
+		handleHeaterResponse(data)
 	case stiebel.Manager:
-		HandleManagerResponse(data)
+		handleManagerResponse(data)
 	case stiebel.Kessel:
 		handleBoilerResponse(data)
 		//default:

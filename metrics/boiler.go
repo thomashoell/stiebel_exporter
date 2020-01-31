@@ -8,17 +8,6 @@ import (
 	"wlp_exporter/stiebel"
 )
 
-const (
-	day   = "day"
-	total = "total"
-	wh    = "WH"
-	kwh   = "kWH"
-	mwh   = "MWH"
-	water = "water"
-	heat  = "heat"
-	we1   = "1"
-	we2   = "2"
-)
 
 var (
 	boilerFlowTemperature = prometheus.NewGauge(prometheus.GaugeOpts{
@@ -64,15 +53,6 @@ var (
 		"heat_generator",
 	})
 )
-
-func registerBoilerMetrics(r *prometheus.Registry) {
-	r.MustRegister(boilerFlowTemperature)
-	r.MustRegister(boilerReturnTemperature)
-	r.MustRegister(outdoorTemperature)
-	r.MustRegister(tankTemperature)
-	r.MustRegister(electricalPowerConsumed)
-	r.MustRegister(heatProduced)
-}
 
 func handleBoilerResponse(data []uint8) {
 	reg, payload := stiebel.Payload(data)
@@ -173,18 +153,7 @@ func requestBoilerMetrics(bus *can.Bus) {
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0920)) // El. Aufnahme Heiz Sum kWH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0921)) // El. Aufnahme Heiz Sum MWH
 
-	// Waermeertrag
-	// WE2
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0922)) // Waermeertrag WW Tag WH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0923)) // Waermeertrag WW Tag kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0924)) // Waermeertrag WW Sum kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0925)) // Waermeertrag WW Sum MWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0926)) // Waermeertrag Heiz Tag WH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0927)) // Waermeertrag Heiz Tag kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0928)) // Waermeertrag Heiz Sum kWH
-	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x0929)) // Waermeertrag Heiz Sum MWH
-
-	// WE1
+	// Waermeertrag WE1
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092A)) // Waermeertrag WW Tag WH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092B)) // Waermeertrag WW Tag kWH
 	stiebel.ReadRegister(bus, stiebel.PC, stiebel.Kessel, stiebel.Reading(0x092C)) // Waermeertrag WW Sum kWH
