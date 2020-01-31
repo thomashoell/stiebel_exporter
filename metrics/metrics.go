@@ -10,24 +10,16 @@ import (
 	"wlp_exporter/stiebel"
 )
 
-type modelInfo struct {
-	customerId      string
-	manufacturerId  string
-	softwareNumber  string
-	softwareVersion string
-}
-
 const (
 	namespace = "stiebel"
+	heater    = "heizmodul"
 )
 
 var (
-	model    modelInfo
 	registry = prometheus.NewRegistry()
 	handler  = promhttp.HandlerFor(registry, promhttp.HandlerOpts{
 		ErrorHandling: promhttp.HTTPErrorOnError,
 	})
-	status *prometheus.GaugeVec
 )
 
 func Handler() http.Handler {
@@ -35,25 +27,12 @@ func Handler() http.Handler {
 }
 
 func GatherMetrics(bus *can.Bus) {
-	status = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: namespace,
-		Name:      "up",
-		Help:      "meta metric",
-	},
-		[]string{
-			"customer_id",
-			"manufacturer_id",
-			"software_number",
-			"software_version",
-		})
-
-	registry.MustRegister(status)
-
+	registerHeaterMetrics(registry)
 	bus.SubscribeFunc(metricsHandler)
 
 	go func() {
 		for true {
-			//requestLoop(status)
+			GatherHeaterMetrics(bus)
 			time.Sleep(10 * time.Second)
 		}
 	}()
@@ -65,4 +44,3 @@ func GatherMetrics(bus *can.Bus) {
 func metricsHandler(frm can.Frame) {
 	stiebel.LogFrame(frm)
 }
-
