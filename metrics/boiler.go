@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	day = "day"
+	day   = "day"
 	total = "total"
-	wh = "WH"
-	kwh = "kWH"
-	mwh = "MWH"
+	wh    = "WH"
+	kwh   = "kWH"
+	mwh   = "MWH"
 	water = "water"
-	heat = "heat"
+	heat  = "heat"
 )
 
 var (
@@ -103,35 +103,35 @@ func handleBoilerResponse(data []uint8) {
 	case 0x091A:
 		electricalPowerConsumed.WithLabelValues(day, wh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x091B:
-		electricalPowerConsumed.WithLabelValues(day, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
+		electricalPowerConsumed.WithLabelValues(day, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x091C:
-		electricalPowerConsumed.WithLabelValues(total, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
+		electricalPowerConsumed.WithLabelValues(total, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x091D:
-		electricalPowerConsumed.WithLabelValues(total, mwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
+		electricalPowerConsumed.WithLabelValues(total, mwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
 	case 0x091E:
 		electricalPowerConsumed.WithLabelValues(day, wh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x091F:
-		electricalPowerConsumed.WithLabelValues(day, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
+		electricalPowerConsumed.WithLabelValues(day, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x0920:
-		electricalPowerConsumed.WithLabelValues(total, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
+		electricalPowerConsumed.WithLabelValues(total, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x0921:
-		electricalPowerConsumed.WithLabelValues(total, mwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
+		electricalPowerConsumed.WithLabelValues(total, mwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
 	case 0x092A:
 		heatProduced.WithLabelValues(day, wh, water).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x092B:
-		heatProduced.WithLabelValues(day, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(day, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x092C:
-		heatProduced.WithLabelValues(total, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(total, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x092D:
-		heatProduced.WithLabelValues(total, mwh, water).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(total, mwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
 	case 0x092E:
 		heatProduced.WithLabelValues(day, wh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
 	case 0x092F:
-		heatProduced.WithLabelValues(day, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(day, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x0930:
-		heatProduced.WithLabelValues(total, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(total, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
 	case 0x0931:
-		heatProduced.WithLabelValues(total, mwh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(total, mwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
 	default:
 		log.Debugf("boiler register %x unhandled", reg)
 	}
