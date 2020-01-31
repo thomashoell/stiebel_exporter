@@ -52,7 +52,6 @@ var (
 		"time_frame",
 		"magnitude",
 		"component",
-		"heat_generator",
 	})
 	heatProduced = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: namespace,
@@ -62,6 +61,7 @@ var (
 		"time_frame",
 		"magnitude",
 		"component",
+		"heat_generator",
 	})
 )
 
