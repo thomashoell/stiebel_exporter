@@ -85,10 +85,10 @@ func Reading(register uint16) *ElsterReading {
 }
 
 func decodeSignedDecVal(b []byte) float64 {
-	if b[0]&0b10000000 == 0 {
+	if b[0]&0x80 == 0 {
 		return float64(binary.BigEndian.Uint16(b))
 	} else {
-		b[0] -= 0b10000000
+		b[0] -= 0x80
 		return -float64(binary.BigEndian.Uint16(b))
 	}
 }
@@ -102,10 +102,10 @@ func DecodeValue(b []byte, t ElsterType) interface{} {
 	case et_little_endian:
 		return float64(binary.LittleEndian.Uint16(b))
 	case et_dec_val:
-		if b[0]&0b10000000 == 0 {
+		if b[0]&0x80 == 0 {
 			return float64(binary.BigEndian.Uint16(b)) / 10
 		} else {
-			b[0] -= 0b10000000
+			b[0] -= 0x80
 			return -float64(binary.BigEndian.Uint16(b)) / 10
 		}
 
