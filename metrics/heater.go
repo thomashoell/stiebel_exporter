@@ -29,7 +29,7 @@ func handleHeaterResponse(data []uint8) {
 	val := stiebel.DecodeValue(payload, r.Type)
 
 	if val == nil {
-		log.Error("value is nil")
+		log.Error("[heater] response to register %x is nil. Complete frame is %x", reg, payload)
 		return
 	}
 
