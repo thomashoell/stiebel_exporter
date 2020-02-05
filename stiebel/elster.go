@@ -84,15 +84,6 @@ func Reading(register uint16) *ElsterReading {
 	return nil
 }
 
-func decodeSignedDecVal(b []byte) float64 {
-	if b[0]&0x80 == 0 {
-		return float64(binary.BigEndian.Uint16(b))
-	} else {
-		b[0] -= 0x80
-		return -float64(binary.BigEndian.Uint16(b))
-	}
-}
-
 func DecodeValue(b []byte, t ElsterType) interface{} {
 	if bytes.Equal(b, []byte{0x80, 0x00}) {
 		return nil
@@ -150,10 +141,15 @@ func DecodeValue(b []byte, t ElsterType) interface{} {
 		}
 		log.Fatalf("Invalid bool % x", b)
 		return nil
-	}
 
-	// default
-	return b
+	default:
+		if b[0]&0x80 == 0 {
+			return float64(binary.BigEndian.Uint16(b))
+		} else {
+			b[0] -= 0x80
+			return -float64(binary.BigEndian.Uint16(b))
+		}
+	}
 }
 
 func EncodeValue(val interface{}, t ElsterType) []byte {
