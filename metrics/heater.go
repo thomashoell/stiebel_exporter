@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"encoding/binary"
 	"github.com/brutella/can"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
@@ -29,31 +28,31 @@ func handleHeaterResponse(data []uint8) {
 	val := stiebel.DecodeValue(payload, r.Type)
 
 	if val == nil {
-		log.Errorf("[heater] response to register %x is nil. Complete frame is %x", reg, payload)
+		log.Errorf("[heater] response to register %x is nil. Complete frame is %x", reg, data)
 		return
 	}
 
 	switch reg {
 	case 0x0922:
-		heatProduced.WithLabelValues(day, wh, water, we2).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(day, wh, water, we2).Set(val.(float64))
 	case 0x0923:
-		heatProduced.WithLabelValues(day, kwh, water, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(day, kwh, water, we2).Set(val.(float64) * 1e3)
 	case 0x0924:
-		heatProduced.WithLabelValues(total, kwh, water, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(total, kwh, water, we2).Set(val.(float64) * 1e3)
 	case 0x0925:
-		heatProduced.WithLabelValues(total, mwh, water, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+		heatProduced.WithLabelValues(total, mwh, water, we2).Set(val.(float64) * 1e6)
 	case 0x0926:
-		heatProduced.WithLabelValues(day, wh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(day, wh, heat, we2).Set(val.(float64))
 	case 0x0927:
-		heatProduced.WithLabelValues(day, kwh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(day, kwh, heat, we2).Set(val.(float64) * 1e3)
 	case 0x0928:
-		heatProduced.WithLabelValues(total, kwh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(total, kwh, heat, we2).Set(val.(float64) * 1e3)
 	case 0x0929:
-		heatProduced.WithLabelValues(total, mwh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+		heatProduced.WithLabelValues(total, mwh, heat, we2).Set(val.(float64) * 1e6)
 	case 0x063E:
-		compressorSpeedRpm.WithLabelValues(compressor1).Set(float64(binary.BigEndian.Uint16(payload)))
+		compressorSpeedRpm.WithLabelValues(compressor1).Set(val.(float64))
 	case 0x063F:
-		compressorSpeedRpm.WithLabelValues(compressor2).Set(float64(binary.BigEndian.Uint16(payload)))
+		compressorSpeedRpm.WithLabelValues(compressor2).Set(val.(float64))
 	case 0x0265:
 		hotGasTemperature.Set(val.(float64))
 	default:

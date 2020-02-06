@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"encoding/binary"
 	"github.com/brutella/can"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
@@ -73,7 +72,7 @@ func handleBoilerResponse(data []uint8) {
 	val := stiebel.DecodeValue(payload, r.Type)
 
 	if val == nil {
-		log.Error("[boiler] response to register %x is nil. Complete frame is %x", reg, payload)
+		log.Error("[boiler] response to register %x is nil. Complete frame is %x", reg, data)
 		return
 	}
 
@@ -87,53 +86,53 @@ func handleBoilerResponse(data []uint8) {
 	case 0x000E:
 		tankTemperature.Set(val.(float64))
 	case 0x091A:
-		electricalPowerConsumed.WithLabelValues(day, wh, water).Set(float64(binary.BigEndian.Uint16(payload)))
+		electricalPowerConsumed.WithLabelValues(day, wh, water).Set(val.(float64))
 	case 0x091B:
-		electricalPowerConsumed.WithLabelValues(day, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		electricalPowerConsumed.WithLabelValues(day, kwh, water).Set(val.(float64) * 1e3)
 	case 0x091C:
-		electricalPowerConsumed.WithLabelValues(total, kwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		electricalPowerConsumed.WithLabelValues(total, kwh, water).Set(val.(float64) * 1e3)
 	case 0x091D:
-		electricalPowerConsumed.WithLabelValues(total, mwh, water).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+		electricalPowerConsumed.WithLabelValues(total, mwh, water).Set(val.(float64) * 1e6)
 	case 0x091E:
-		electricalPowerConsumed.WithLabelValues(day, wh, heat).Set(float64(binary.BigEndian.Uint16(payload)))
+		electricalPowerConsumed.WithLabelValues(day, wh, heat).Set(val.(float64))
 	case 0x091F:
-		electricalPowerConsumed.WithLabelValues(day, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		electricalPowerConsumed.WithLabelValues(day, kwh, heat).Set(val.(float64) * 1e3)
 	case 0x0920:
-		electricalPowerConsumed.WithLabelValues(total, kwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		electricalPowerConsumed.WithLabelValues(total, kwh, heat).Set(val.(float64) * 1e3)
 	case 0x0921:
-		electricalPowerConsumed.WithLabelValues(total, mwh, heat).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+		electricalPowerConsumed.WithLabelValues(total, mwh, heat).Set(val.(float64) * 1e6)
 	case 0x0922:
-		heatProduced.WithLabelValues(day, wh, water, we2).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(day, wh, water, we2).Set(val.(float64))
 	case 0x0923:
-		heatProduced.WithLabelValues(day, kwh, water, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(day, kwh, water, we2).Set(val.(float64) * 1e3)
 	case 0x0924:
-		heatProduced.WithLabelValues(total, kwh, water, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(total, kwh, water, we2).Set(val.(float64) * 1e3)
 	case 0x0925:
-		heatProduced.WithLabelValues(total, mwh, water, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+		heatProduced.WithLabelValues(total, mwh, water, we2).Set(val.(float64) * 1e6)
 	case 0x0926:
-		heatProduced.WithLabelValues(day, wh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(day, wh, heat, we2).Set(val.(float64))
 	case 0x0927:
-		heatProduced.WithLabelValues(day, kwh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(day, kwh, heat, we2).Set(val.(float64) * 1e3)
 	case 0x0928:
-		heatProduced.WithLabelValues(total, kwh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(total, kwh, heat, we2).Set(val.(float64) * 1e3)
 	case 0x0929:
-		heatProduced.WithLabelValues(total, mwh, heat, we2).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+		heatProduced.WithLabelValues(total, mwh, heat, we2).Set(val.(float64) * 1e6)
 	case 0x092A:
-		heatProduced.WithLabelValues(day, wh, water, we1).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(day, wh, water, we1).Set(val.(float64))
 	case 0x092B:
-		heatProduced.WithLabelValues(day, kwh, water, we1).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(day, kwh, water, we1).Set(val.(float64) * 1e3)
 	case 0x092C:
-		heatProduced.WithLabelValues(total, kwh, water, we1).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(total, kwh, water, we1).Set(val.(float64) * 1e3)
 	case 0x092D:
-		heatProduced.WithLabelValues(total, mwh, water, we1).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+		heatProduced.WithLabelValues(total, mwh, water, we1).Set(val.(float64) * 1e6)
 	case 0x092E:
-		heatProduced.WithLabelValues(day, wh, heat, we1).Set(float64(binary.BigEndian.Uint16(payload)))
+		heatProduced.WithLabelValues(day, wh, heat, we1).Set(val.(float64))
 	case 0x092F:
-		heatProduced.WithLabelValues(day, kwh, heat, we1).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(day, kwh, heat, we1).Set(val.(float64) * 1e3)
 	case 0x0930:
-		heatProduced.WithLabelValues(total, kwh, heat, we1).Set(float64(binary.BigEndian.Uint16(payload)) * 1e3)
+		heatProduced.WithLabelValues(total, kwh, heat, we1).Set(val.(float64) * 1e3)
 	case 0x0931:
-		heatProduced.WithLabelValues(total, mwh, heat, we1).Set(float64(binary.BigEndian.Uint16(payload)) * 1e6)
+		heatProduced.WithLabelValues(total, mwh, heat, we1).Set(val.(float64) * 1e6)
 	default:
 		log.Debugf("boiler register %x unhandled", reg)
 	}

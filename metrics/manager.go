@@ -7,7 +7,19 @@ import (
 
 func handleManagerResponse(data []uint8) {
 	reg, payload := stiebel.Payload(data)
-	val := stiebel.ValueString(payload)
+	r := stiebel.Reading(reg)
+
+	if r == nil {
+		log.Debugf("register %x is not handled", reg)
+		return
+	}
+
+	val := stiebel.DecodeValue(payload, r.Type)
+
+	if val == nil {
+		log.Errorf("[manager] response to register %x is nil. Complete frame is %x", reg, data)
+		return
+	}
 
 	switch reg {
 	case 0x0016:
