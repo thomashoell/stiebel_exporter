@@ -13,7 +13,7 @@ var device string
 
 func main() {
 
-	log.SetLevel(log.InfoLevel)
+	configureLogging()
 
 	device = "can0"
 
@@ -45,4 +45,12 @@ func main() {
 	}()
 
 	metrics.GatherMetrics(bus)
+}
+
+func configureLogging() {
+	log.SetLevel(log.InfoLevel)
+	customFormatter := new(log.TextFormatter)
+	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	log.SetFormatter(customFormatter)
+	customFormatter.FullTimestamp = true
 }
