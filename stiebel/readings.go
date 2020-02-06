@@ -1,6 +1,20 @@
 package stiebel
 
 type ElsterType int
+type ElsterReading struct {
+	Name  string
+	Index uint16
+	Type  ElsterType
+}
+type ErrorIndex struct {
+	Index uint16
+	Name  string
+}
+
+type ModeIndex struct {
+	Index uint16
+	Name  string
+}
 
 const (
 	none ElsterType = iota
@@ -22,14 +36,12 @@ const (
 	et_little_bool
 )
 
-type ElsterReading struct {
-	Name  string
-	Index uint16
-	Type  ElsterType
-}
-
 var elsterReadings []*ElsterReading
 var elsterIndex map[uint16]*ElsterReading
+var errorTypes []*ErrorIndex
+var errorIndex map[uint16]*ErrorIndex
+var modeTypes []*ModeIndex
+var modeIndex map[uint16]*ModeIndex
 
 /**
  * Elster reading definitions from can_progs
@@ -3720,8 +3732,55 @@ func init() {
 		{"INFOBLOCK_5", 0xfe06, 0},
 		{"INFOBLOCK_6", 0xfe07, 0},
 	}
+
+	errorTypes = []*ErrorIndex{
+		{0x0002, "Schuetz klebt"},
+		{0x0003, "ERR HD-SENSOR"},
+		{0x0004, "Hochdruck"},
+		{0x0005, "Verdampferfuehler"},
+		{0x0006, "Relaistreiber"},
+		{0x0007, "Relaispegel"},
+		{0x0008, "Hexschalter"},
+		{0x0009, "Drehzahl Luefter"},
+		{0x000a, "Lueftertreiber"},
+		{0x000b, "Reset Baustein"},
+		{0x000c, "ND"},
+		{0x000d, "ROM"},
+		{0x000e, "QUELLEN MINTEMP"},
+		{0x0010, "Abtauen"},
+		{0x0012, "ERR T-HEI IWS"},
+		{0x0017, "ERR T-FRO IWS"},
+		{0x001a, "Niederdruck"},
+		{0x001b, "ERR ND-DRUCK"},
+		{0x001c, "ERR HD-DRUCK"},
+		{0x001d, "HD-SENSOR-MAX"},
+		{0x001e, "HEISSGAS-MAX"},
+		{0x001f, "ERR HD-SENSOR"},
+		{0x0020, "Einfrierschutz"},
+		{0x0021, "KEINE LEISTUNG"},
+	}
+
+	modeTypes = []*ModeIndex{
+		{0x0000, "Notbetrieb"},
+		{0x0100, "Bereitschaft"},
+		{0x0200, "Automatik"},
+		{0x0300, "Tagbetrieb"},
+		{0x0400, "Absenkbetrieb"},
+		{0x0500, "Warmwasser"},
+	}
+
 	elsterIndex = make(map[uint16]*ElsterReading)
 	for _, r := range elsterReadings {
 		elsterIndex[r.Index] = r
+	}
+
+	errorIndex = make(map[uint16]*ErrorIndex)
+	for _, r := range errorTypes{
+		errorIndex[r.Index] = r
+	}
+
+	modeIndex = make(map[uint16]*ModeIndex)
+	for _, r := range modeTypes {
+		modeIndex[r.Index] = r
 	}
 }
