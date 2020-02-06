@@ -91,24 +91,15 @@ func DecodeValue(b []byte, t ElsterType) interface{} {
 
 	switch t {
 	case et_little_endian:
-		return float64(binary.LittleEndian.Uint16(b))
+		return float64(int16(binary.LittleEndian.Uint16(b)))
 	case et_dec_val:
-		if b[0]&0x80 == 0 {
-			return float64(binary.BigEndian.Uint16(b)) / 10
-		} else {
-			b[0] -= 0x80
-			return -float64(binary.BigEndian.Uint16(b)) / 10
-		}
-
-		//return float64(binary.BigEndian.Uint16(b)) / 10
+		return float64(int16(binary.BigEndian.Uint16(b))) / 10
 	case et_cent_val:
-		return float64(binary.BigEndian.Uint16(b)) / 100
+		return float64(int16(binary.BigEndian.Uint16(b))) / 100
 	case et_mil_val:
-		return float64(binary.BigEndian.Uint16(b)) / 1000
-
+		return float64(int16(binary.BigEndian.Uint16(b))) / 1000
 	case et_byte:
 		return b[0]
-
 	case et_zeit:
 		val := binary.BigEndian.Uint16(b)
 		return fmt.Sprintf("%02d:%02d", byte(val&0xff), byte(val>>8))
@@ -123,7 +114,6 @@ func DecodeValue(b []byte, t ElsterType) interface{} {
 				byte((val&0xff)/4), byte(15*(val%4)))
 		}
 		return nil
-
 	case et_little_bool:
 		if bytes.Equal(b, []byte{0x01, 0x00}) {
 			return true
@@ -132,7 +122,6 @@ func DecodeValue(b []byte, t ElsterType) interface{} {
 		}
 		log.Fatalf("Invalid little bool % x", b)
 		return nil
-
 	case et_bool:
 		if bytes.Equal(b, []byte{0x00, 0x01}) {
 			return true
@@ -141,14 +130,8 @@ func DecodeValue(b []byte, t ElsterType) interface{} {
 		}
 		log.Fatalf("Invalid bool % x", b)
 		return nil
-
 	default:
-		if b[0]&0x80 == 0 {
-			return float64(binary.BigEndian.Uint16(b))
-		} else {
-			b[0] -= 0x80
-			return -float64(binary.BigEndian.Uint16(b))
-		}
+		return float64(int16(binary.BigEndian.Uint16(b)))
 	}
 }
 
@@ -157,18 +140,17 @@ func EncodeValue(val interface{}, t ElsterType) []byte {
 
 	switch t {
 	case et_little_endian:
-		u := uint16(val.(float64))
+		u := uint16(int16(val.(float64)))
 		binary.LittleEndian.PutUint16(b, u)
 	case et_dec_val:
-		u := uint16(val.(float64) * 10)
+		u := uint16(int16(val.(float64) * 10))
 		binary.BigEndian.PutUint16(b, u)
 	case et_cent_val:
-		u := uint16(val.(float64) * 100)
+		u := uint16(int16(val.(float64) * 100))
 		binary.BigEndian.PutUint16(b, u)
 	case et_mil_val:
-		u := uint16(val.(float64) * 1000)
+		u := uint16(int16(val.(float64) * 1000))
 		binary.BigEndian.PutUint16(b, u)
-
 	case et_byte:
 		b[0] = val.(byte)
 	case et_little_bool:
@@ -179,9 +161,11 @@ func EncodeValue(val interface{}, t ElsterType) []byte {
 		if val.(bool) {
 			b[1] = 0x01
 		}
+	default:
+		u := uint16(val.(int16))
+		binary.LittleEndian.PutUint16(b, u)
 	}
 
-	// default
 	return b
 }
 
