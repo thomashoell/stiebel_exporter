@@ -11,8 +11,6 @@ import (
 	"wlp_exporter/m/v2/metrics"
 )
 
-var device string
-
 func main() {
 
 	configureLogging()
