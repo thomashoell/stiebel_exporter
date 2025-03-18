@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
-	"wlp_exporter/metrics"
+	"wlp_exporter/m/v2/metrics"
 )
 
 var Router *mux.Router

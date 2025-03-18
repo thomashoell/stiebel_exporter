@@ -4,7 +4,7 @@ import (
 	"github.com/brutella/can"
 	"github.com/prometheus/client_golang/prometheus"
 	log "github.com/sirupsen/logrus"
-	"wlp_exporter/stiebel"
+	"wlp_exporter/m/v2/stiebel"
 )
 
 var (

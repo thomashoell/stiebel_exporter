@@ -7,7 +7,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"time"
-	"wlp_exporter/stiebel"
+	"wlp_exporter/m/v2/stiebel"
 )
 
 const (

@@ -6,7 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
-	"wlp_exporter/metrics"
+	"wlp_exporter/m/v2/metrics"
 )
 
 var device string
