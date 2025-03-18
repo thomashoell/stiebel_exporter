@@ -1,6 +1,6 @@
 module wlp_exporter/m/v2
 
-go 1.23.7
+go 1.22
 
 require (
 	github.com/brutella/can v0.0.2

@@ -47,7 +47,7 @@ func GatherMetrics(bus *can.Bus) {
 
 	log.Info("starting to gather metrics")
 	go func() {
-		for true {
+		for {
 			requestBoilerMetrics(bus)
 			requestHeaterMetrics(bus)
 			time.Sleep(10 * time.Second)
