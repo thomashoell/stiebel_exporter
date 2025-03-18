@@ -21,7 +21,7 @@ func main() {
 
 	bus, err := can.NewBusForInterfaceWithName(device)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("failed to open device %s: %v", device, err)
 	}
 
 	quit := make(chan os.Signal)
