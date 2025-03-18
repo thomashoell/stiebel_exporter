@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"github.com/brutella/can"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -16,7 +17,7 @@ func main() {
 
 	configureLogging()
 
-	device = "can0"
+	device := getCanIface()
 
 	bus, err := can.NewBusForInterfaceWithName(device)
 	if err != nil {
@@ -46,6 +47,13 @@ func main() {
 	}()
 
 	metrics.GatherMetrics(bus)
+}
+
+func getCanIface() string {
+	var device string
+	flag.StringVar(&device, "device", "can0", "interface to use")
+	flag.Parse()
+	return device
 }
 
 func configureLogging() {
