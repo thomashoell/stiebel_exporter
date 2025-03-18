@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
+	"time"
 	"wlp_exporter/m/v2/metrics"
 )
 
@@ -50,7 +51,7 @@ func main() {
 func configureLogging() {
 	log.SetLevel(log.InfoLevel)
 	customFormatter := new(log.TextFormatter)
-	customFormatter.TimestampFormat = "2006-01-02 15:04:05"
+	customFormatter.TimestampFormat = time.RFC3339Nano
 	log.SetFormatter(customFormatter)
 	customFormatter.FullTimestamp = true
 }
