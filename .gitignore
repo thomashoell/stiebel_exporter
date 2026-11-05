@@ -1,2 +1,5 @@
-.idea
-wlp_exporter
+.idea/workspace.xml
+/wlp_exporter
+/dist/
+/node_modules/
+*.out

@@ -2,84 +2,73 @@ package stiebel
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/brutella/can"
-	log "github.com/sirupsen/logrus"
 )
 
-// LogFrame logs a frame with the same format as candump from can-utils.
-func LogFrame(frm can.Frame) {
-	data := trimSuffix(frm.Data[:], 0x00)
-	length := fmt.Sprintf("[%x]", frm.Length)
+// FormatFrame formats a frame like candump from can-utils, followed by the decoded Elster index and,
+// for responses with a known index, its name and value.
+func FormatFrame(frm can.Frame) string {
+	length := min(int(frm.Length), len(frm.Data))
+	data := frm.Data[:length]
 
-	chars := fmt.Sprintf("'%s'", printableString(data[:]))
-	rcvr := ReceiverId(frm.Data[:2])
-	formatted := fmt.Sprintf("%-4x %-3s % -24X %-10s %6x ", frm.ID, length, data, chars, rcvr)
+	var sb strings.Builder
+	fmt.Fprintf(&sb, "%-4X [%d] % -24X %-10s", frm.ID, frm.Length, data, "'"+printableString(data)+"'")
 
-	reg, payload := Payload(data)
-	formatted += fmt.Sprintf("%04X ", reg)
+	msg, err := ParseMessage(data)
+	if err != nil {
+		return sb.String()
+	}
+	fmt.Fprintf(&sb, " %4X %04X", msg.Receiver, msg.Index)
 
-	if data[0]&Response != 0 {
-		if r := Reading(reg); r != nil {
-			val := DecodeValue(payload, r.Type)
-			valStr := ValueString(val)
-
-			formatted += fmt.Sprintf("%-24s %11s", left(r.Name, 20), valStr)
+	if msg.Type != Response {
+		return sb.String()
+	}
+	if r := Reading(msg.Index); r != nil {
+		val, err := DecodeValue(msg.Value, r.Type)
+		if err != nil {
+			fmt.Fprintf(&sb, " %-32s %11s", left(r.Name, 32), err)
+		} else {
+			fmt.Fprintf(&sb, " %-32s %11s", left(r.Name, 32), ValueString(val))
 		}
 	}
 
-	log.Info(formatted)
+	return sb.String()
 }
 
-func LogRegisterValue(val interface{}, r *ElsterReading) {
-	valStr := ValueString(val)
-	formatted := fmt.Sprintf("%04X %-48s %11s", r.Index, left(r.Name, 44), valStr)
-	fmt.Println(formatted)
-}
-
-func ValueString(val interface{}) string {
-	if _, ok := val.(float64); ok {
-		return fmt.Sprintf("%.1f", val)
-	} else if _, ok := val.(string); ok {
-		return fmt.Sprintf("%s", val)
-	} else if _, ok := val.(bool); ok {
-		return fmt.Sprintf("%t", val)
-	} else if val == nil {
-		return fmt.Sprintf("%v", val)
+// ValueString formats a value returned by DecodeValue.
+func ValueString(val any) string {
+	switch v := val.(type) {
+	case float64:
+		return fmt.Sprintf("%.1f", v)
+	case string:
+		return v
+	case bool:
+		return fmt.Sprintf("%t", v)
+	case nil:
+		return "<nil>"
+	default:
+		return fmt.Sprintf("0x%04X", v)
 	}
-
-	return fmt.Sprintf("0x%04X", val)
 }
 
 func left(s string, chars int) string {
-	l := len(s)
-	if chars < l {
-		l = chars
+	if chars < len(s) {
+		return s[:chars]
 	}
-	return s[:l]
+	return s
 }
 
-// trim returns a subslice of s by slicing off all trailing b bytes.
-func trimSuffix(s []byte, b byte) []byte {
-	for i := len(s) - 1; i >= 0; i-- {
-		if s[i] != b {
-			return s[:i+1]
-		}
-	}
-
-	return []byte{}
-}
-
-// printableString creates a string from s and replaces non-printable bytes (i.e. 0-32, 127)
-// with '.' – similar how candump from can-utils does it.
+// printableString creates a string from s and replaces non-printable bytes with '.',
+// similar to candump from can-utils.
 func printableString(s []byte) string {
-	var ascii []byte
-	for _, b := range s {
+	ascii := make([]byte, len(s))
+	for i, b := range s {
 		if b < 32 || b > 126 {
-			b = byte('.')
-
+			b = '.'
 		}
-		ascii = append(ascii, b)
+		ascii[i] = b
 	}
-
 	return string(ascii)
 }

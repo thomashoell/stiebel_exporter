@@ -1,0 +1,55 @@
+# golangci-lint v2 configuration
+# https://golangci-lint.run/docs/configuration/file/
+version: "2"
+
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  # errcheck, govet, ineffassign, staticcheck, unused
+  default: standard
+  enable:
+    - bodyclose
+    - copyloopvar
+    - errorlint      # proper error wrapping / comparison
+    - gosec          # security issues
+    - misspell
+    - noctx          # HTTP requests without context
+    - nolintlint     # keep //nolint directives honest
+    - unconvert
+    - usestdlibvars
+  settings:
+    gosec:
+      excludes:
+        - G104 # unchecked errors, already covered by errcheck
+    misspell:
+      locale: US
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - std-error-handling
+    rules:
+      # names of the Elster indexes are German
+      - path: stiebel/readings\.go
+        linters:
+          - misspell
+      - path: _test\.go
+        linters:
+          - gosec
+          - errcheck
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/thomashoell/wlp_exporter
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
