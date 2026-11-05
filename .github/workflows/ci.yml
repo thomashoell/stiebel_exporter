@@ -1,0 +1,327 @@
+name: CI
+
+on:
+  # pushes to main run this pipeline through release.yml (workflow_call)
+  pull_request:
+  # weekly run so new CVEs in dependencies / the Go stdlib are detected even without commits
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+  # the release workflow runs the full pipeline before publishing
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  GOVULNCHECK_VERSION: v1.9.0
+  PROMETHEUS_VERSION: v3.15.1
+  GORELEASER_VERSION: v2.20.0
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      # single source of truth for the linter versions: .pre-commit-config.yaml (updated by Dependabot)
+      - name: Read linter versions from .pre-commit-config.yaml
+        id: versions
+        run: |
+          rev_of() {
+            awk -v repo="repo: $1" 'index($0, repo) { found = 1; next } found && $1 == "rev:" { print $2; exit }' .pre-commit-config.yaml
+          }
+          golangci_lint=$(rev_of https://github.com/golangci/golangci-lint)
+          actionlint=$(rev_of https://github.com/rhysd/actionlint)
+          if [ -z "$golangci_lint" ] || [ -z "$actionlint" ]; then
+            echo "::error file=.pre-commit-config.yaml::could not read the golangci-lint/actionlint versions"
+            exit 1
+          fi
+          {
+            echo "golangci-lint=${golangci_lint}"
+            echo "actionlint=${actionlint#v}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check go.mod / go.sum are tidy
+        run: |
+          go mod tidy
+          git diff --exit-code -- go.mod go.sum
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: ${{ steps.versions.outputs.golangci-lint }}
+
+      - name: Lint GitHub Actions workflows
+        if: ${{ !cancelled() }}
+        env:
+          ACTIONLINT_VERSION: ${{ steps.versions.outputs.actionlint }}
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo "rhysd/actionlint:${ACTIONLINT_VERSION}" -color
+
+  test:
+    name: Test (Go ${{ matrix.go }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # "go.mod" = the version the project declares, "stable" = latest Go release
+        go: [go.mod, stable]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: ${{ matrix.go == 'go.mod' && 'go.mod' || '' }}
+          go-version: ${{ matrix.go != 'go.mod' && matrix.go || '' }}
+
+      - name: Run tests
+        run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Coverage summary
+        run: |
+          {
+            echo "### Coverage (Go ${{ matrix.go }})"
+            echo '```'
+            go tool cover -func=coverage.out
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage
+        if: matrix.go == 'go.mod'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage
+          path: coverage.out
+          # runs on main are the baseline for the coverage report of PRs
+          retention-days: 90
+
+  coverage:
+    name: Coverage report
+    needs: test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # download the coverage of main from the latest release workflow run
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: coverage
+          path: current
+
+      - name: Download coverage of main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list -R "$GITHUB_REPOSITORY" --workflow release.yml --branch main --status success \
+            --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+          if [ -z "$run_id" ] || ! gh run download "$run_id" -R "$GITHUB_REPOSITORY" -n coverage -D base; then
+            echo "::notice::No coverage of main found, the report shows absolute values only"
+          fi
+
+      - name: Build report
+        run: |
+          python3 .github/scripts/coverage-report.py current/coverage.out base/coverage.out > coverage-report.md
+          cat coverage-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      # one comment per PR, updated on every push; not possible for PRs from forks or Dependabot
+      # (read-only token), the report is in the job summary then
+      - name: Comment on pull request
+        if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          comment_id=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- coverage-report -->"))) | .id' | head -n 1)
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" -F body=@coverage-report.md > /dev/null
+          else
+            gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body-file coverage-report.md
+          fi
+
+  # end-to-end test on a virtual CAN interface: the exporter polls, a fake heat pump answers with cansend
+  smoke:
+    name: Smoke test (vcan)
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Set up vcan0
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q can-utils "linux-modules-extra-$(uname -r)"
+          sudo modprobe vcan
+          sudo ip link add dev vcan0 type vcan
+          sudo ip link set up vcan0
+
+      - name: Build binary
+        run: CGO_ENABLED=0 go build -o "$RUNNER_TEMP/smoke/wlp_exporter" .
+
+      - name: Start wlp_exporter on vcan0
+        working-directory: ${{ runner.temp }}/smoke
+        run: |
+          # record the requests of the exporter
+          candump -L vcan0 > candump.log &
+          echo $! > candump.pid
+          ./wlp_exporter -device vcan0 -listen 127.0.0.1:9000 -interval 2s -log-level debug > exporter.log 2>&1 &
+          echo $! > exporter.pid
+
+      - name: Check requests and /metrics
+        working-directory: ${{ runner.temp }}/smoke
+        run: |
+          # wait for the webserver
+          curl -fsS --retry 15 --retry-delay 1 --retry-all-errors -o /dev/null http://127.0.0.1:9000/metrics
+
+          # the boiler (0x180) answers to ComfortSoft (0x680): outdoor temperature (0x000C) 12.3 °C,
+          # total heat produced for heating (0x0931) 39 MWh
+          cansend vcan0 180#D2000C007B
+          cansend vcan0 180#D200FA09310027
+          sleep 1
+          curl -fsS http://127.0.0.1:9000/metrics > metrics.txt
+
+          grep -q '^stiebel_outdoor_temperature_celsius 12.3$' metrics.txt \
+            || { echo "::error::outdoor temperature not exported"; exit 1; }
+          grep -q '^stiebel_heat_produced_watt_hours{component="heat",heat_generator="1",magnitude="MWH",time_frame="total"} 3.9e+07$' metrics.txt \
+            || { echo "::error::heat produced not exported"; exit 1; }
+          grep -q '^stiebel_exporter_build_info{' metrics.txt \
+            || { echo "::error::stiebel_exporter_build_info missing"; exit 1; }
+
+          # the exporter must have requested the outdoor temperature from the boiler
+          grep -q 'vcan0 680#31000C' candump.log \
+            || { echo "::error::no request for the outdoor temperature on the bus"; exit 1; }
+
+          # Prometheus lint of the exposition format. The *_watt_hours names are known issues, kept because
+          # the Grafana dashboards use them; anything else fails the job.
+          problems=$(docker run --rm -i --entrypoint promtool "prom/prometheus:${PROMETHEUS_VERSION}" check metrics < metrics.txt 2>&1 \
+            | grep -v -e '^stiebel_electrical_power_consumption_watt_hours use base unit' \
+                      -e '^stiebel_heat_produced_watt_hours use base unit' || true)
+          if [ -n "$problems" ]; then
+            echo "::error::promtool reported issues with the exposed metrics"
+            echo "$problems"
+            exit 1
+          fi
+
+      - name: Stop and check shutdown
+        if: always()
+        working-directory: ${{ runner.temp }}/smoke
+        run: |
+          kill "$(cat candump.pid)" 2>/dev/null || true
+          pid=$(cat exporter.pid)
+          kill -TERM "$pid" 2>/dev/null || true
+          # graceful shutdown on SIGTERM
+          for _ in $(seq 1 50); do kill -0 "$pid" 2>/dev/null || break; sleep 0.1; done
+          if kill -0 "$pid" 2>/dev/null; then
+            echo "::error::wlp_exporter did not stop on SIGTERM"
+            kill -KILL "$pid"
+            status=1
+          fi
+          echo "--- exporter log"; cat exporter.log
+          echo "--- CAN frames"; head -n 50 candump.log
+          exit "${status:-0}"
+
+  release-check:
+    name: GoReleaser (snapshot)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Check config and build all release binaries
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
+        with:
+          distribution: goreleaser
+          version: ${{ env.GORELEASER_VERSION }}
+          args: build --snapshot --clean
+
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # use the Go version from go.mod so vulnerabilities in the shipped stdlib are reported
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Run govulncheck
+        run: |
+          go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
+          govulncheck ./...
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          languages: go
+          build-mode: autobuild
+
+      - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+        with:
+          # same category on PRs (ci.yml) and on main (release.yml calls ci.yml), so PRs can be compared with main
+          category: /language:go
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
