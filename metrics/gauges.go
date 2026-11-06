@@ -34,6 +34,18 @@ type gauges struct {
 	electricalPowerConsumed *prometheus.GaugeVec
 	heatProduced            *prometheus.GaugeVec
 	compressorSpeedRpm      *prometheus.GaugeVec
+
+	heatingFlowSetpoint      prometheus.Gauge
+	tankSetpoint             prometheus.Gauge
+	roomComfortSetpoint      prometheus.Gauge
+	operatingMode            *prometheus.GaugeVec
+	heaterFlowTemperature    prometheus.Gauge
+	heaterReturnTemperature  prometheus.Gauge
+	compressorTargetSpeedRpm *prometheus.GaugeVec
+	fanSpeedRpm              prometheus.Gauge
+	defrostActive            prometheus.Gauge
+	defrosts                 prometheus.Gauge
+	lastDefrostDuration      prometheus.Gauge
 }
 
 func newGauges() *gauges {
@@ -82,6 +94,69 @@ func newGauges() *gauges {
 			Name:      "compressor_speed_rpm",
 			Help:      "The compressor's revolutions per minute.",
 		}, []string{"unit"}),
+
+		heatingFlowSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "heating_flow_setpoint_celsius",
+			Help:      "Set point of the heating flow temperature (KESSELSOLLTEMP), from the heating curve.",
+		}),
+		tankSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "boiler",
+			Name:      "tank_setpoint_celsius",
+			Help:      "Set point of the hot water tank temperature (SPEICHERSOLLTEMP).",
+		}),
+		roomComfortSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "room_comfort_setpoint_celsius",
+			Help:      "Room temperature set point for comfort (day) mode (RAUMSOLLTEMP_I).",
+		}),
+		operatingMode: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "operating_mode",
+			Help:      "Operating mode selected with the program switch (PROGRAMMSCHALTER); the value is the raw code.",
+		}, []string{"mode"}),
+		heaterFlowTemperature: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "heater",
+			Name:      "flow_temperature_celsius",
+			Help:      "Flow temperature measured in the heat pump (VORLAUFISTTEMP_WP_IWS).",
+		}),
+		heaterReturnTemperature: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "heater",
+			Name:      "return_temperature_celsius",
+			Help:      "Return temperature measured in the heat pump (RUECKLAUFISTTEMP_WP_IWS).",
+		}),
+		compressorTargetSpeedRpm: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "compressor_target_speed_rpm",
+			Help:      "The compressor's target revolutions per minute (SOLLDREHZAHL_VERDICHTER).",
+		}, []string{"unit"}),
+		fanSpeedRpm: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "heater",
+			Name:      "fan_speed_rpm",
+			Help:      "Speed of the evaporator fan (LUEFTERDREHZAHL).",
+		}),
+		defrostActive: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "heater",
+			Name:      "defrost_active",
+			Help:      "1 while the evaporator is defrosted, 0 otherwise (ABTAUUNGAKTIV).",
+		}),
+		defrosts: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "heater",
+			Name:      "defrosts",
+			Help:      "Number of defrosts as counted by the heat pump (STARTS_ABTAUUNG).",
+		}),
+		lastDefrostDuration: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "heater",
+			Name:      "last_defrost_duration_seconds",
+			Help:      "Duration of the last defrost (ZEITDAUER_LETZTE_ABTAUUNG); the unit is assumed to be seconds.",
+		}),
 	}
 }
 
@@ -95,6 +170,17 @@ func (g *gauges) collectors() []prometheus.Collector {
 		g.electricalPowerConsumed,
 		g.heatProduced,
 		g.compressorSpeedRpm,
+		g.heatingFlowSetpoint,
+		g.tankSetpoint,
+		g.roomComfortSetpoint,
+		g.operatingMode,
+		g.heaterFlowTemperature,
+		g.heaterReturnTemperature,
+		g.compressorTargetSpeedRpm,
+		g.fanSpeedRpm,
+		g.defrostActive,
+		g.defrosts,
+		g.lastDefrostDuration,
 	}
 }
 
@@ -160,6 +246,12 @@ func newUnits(g *gauges) []*unit {
 		indexSetter{0x000C, set(g.outdoorTemperature)},      // AUSSENTEMP
 		indexSetter{0x000E, set(g.tankTemperature)},         // SPEICHERISTTEMP
 	)
+	boiler.add(true,
+		indexSetter{0x0002, set(g.heatingFlowSetpoint)},        // KESSELSOLLTEMP
+		indexSetter{0x0003, set(g.tankSetpoint)},               // SPEICHERSOLLTEMP
+		indexSetter{0x0005, set(g.roomComfortSetpoint)},        // RAUMSOLLTEMP_I
+		indexSetter{0x0112, setOperatingMode(g.operatingMode)}, // PROGRAMMSCHALTER
+	)
 	boiler.add(true, energyIndexes(0x091A, g.electricalPowerConsumed)...) // EL_AUFNAHMELEISTUNG_*
 	boiler.add(false, energyIndexes(0x0922, g.heatProduced, we2)...)      // WAERMEERTRAG_2WE_* (polled from the heater)
 	boiler.add(true, energyIndexes(0x092A, g.heatProduced, we1)...)       // WAERMEERTRAG_*
@@ -171,11 +263,33 @@ func newUnits(g *gauges) []*unit {
 		indexSetter{0x063F, set(g.compressorSpeedRpm.WithLabelValues(compressor2))}, // ISTDREHZAHL_VERDICHTER_2
 		indexSetter{0x0265, set(g.hotGasTemperature)},                               // HEISSGAS_TEMP
 	)
+	heater.add(true,
+		indexSetter{0x0822, set(g.heaterFlowTemperature)},                                 // VORLAUFISTTEMP_WP_IWS
+		indexSetter{0x0823, set(g.heaterReturnTemperature)},                               // RUECKLAUFISTTEMP_WP_IWS
+		indexSetter{0x063C, set(g.compressorTargetSpeedRpm.WithLabelValues(compressor1))}, // SOLLDREHZAHL_VERDICHTER_1
+		indexSetter{0x0833, set(g.fanSpeedRpm)},                                           // LUEFTERDREHZAHL
+		indexSetter{0x0061, set(g.defrostActive)},                                         // ABTAUUNGAKTIV
+		indexSetter{0x0806, set(g.defrosts)},                                              // STARTS_ABTAUUNG
+		indexSetter{0x0807, set(g.lastDefrostDuration)},                                   // ZEITDAUER_LETZTE_ABTAUUNG
+	)
 
 	// the manager is not polled, its responses are only logged
 	manager := newUnit("manager", stiebel.Manager)
 
 	return []*unit{boiler, heater, manager}
+}
+
+// setOperatingMode exports the raw operating mode code with its name as label; only the current mode has a series.
+func setOperatingMode(vec *prometheus.GaugeVec) setter {
+	return func(v float64) {
+		code := uint16(int16(v)) //nolint:gosec // the decoded value is a 16 bit register
+		mode, ok := stiebel.OperatingModeName(code)
+		if !ok {
+			mode = "unknown"
+		}
+		vec.Reset()
+		vec.WithLabelValues(mode).Set(v)
+	}
 }
 
 func newUnit(name string, id uint16) *unit {
