@@ -1,0 +1,70 @@
+# GoReleaser builds the release binaries and uploads them to the GitHub release created by semantic-release.
+# https://goreleaser.com/customization/
+version: 2
+
+project_name: stiebel_exporter
+
+builds:
+  - id: stiebel_exporter
+    main: .
+    binary: stiebel_exporter
+    env:
+      - CGO_ENABLED=0
+    # SocketCAN is Linux only
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+      # daedalus (Raspberry Pi 3B, Debian armhf)
+      - arm
+    goarm:
+      - "7"
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.gitCommit={{ .ShortCommit }} -X main.gitTag={{ .Tag }}
+    # reproducible builds
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: stiebel_exporter
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
+    files:
+      - README.md
+      - CHANGELOG.md
+      - stiebel_exporter.service
+
+checksum:
+  name_template: checksums.txt
+
+# one SPDX SBOM per archive, generated with syft
+sboms:
+  - artifacts: archive
+
+# keyless Sigstore signature of checksums.txt with the GitHub OIDC identity of the release workflow;
+# checksums.txt covers all archives and SBOMs, so verifying it plus `sha256sum -c` verifies everything
+signs:
+  - cmd: cosign
+    artifacts: checksum
+    signature: "${artifact}.sigstore.json"
+    args:
+      - sign-blob
+      - "--bundle=${signature}"
+      - "${artifact}"
+      - "--yes"
+
+# semantic-release creates the tag and the GitHub release with its notes;
+# GoReleaser only attaches the archives, checksums and SBOMs to it
+changelog:
+  disable: true
+
+release:
+  github:
+    owner: thomashoell
+    name: stiebel_exporter
+  mode: keep-existing
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot+{{ .ShortCommit }}"
