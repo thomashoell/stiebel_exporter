@@ -319,3 +319,74 @@ func TestNewFailsOnDuplicateRegistration(t *testing.T) {
 		t.Error("expected an error when registering the metrics twice")
 	}
 }
+
+func TestTestMetrics(t *testing.T) {
+	bus := &fakeBus{}
+	reg := prometheus.NewRegistry()
+	e, err := New(reg, bus, slog.New(slog.NewTextHandler(io.Discard, nil)), WithTestMetrics(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.requestGap = 0
+
+	// the regular poll doesn't request the test indexes
+	e.Poll(context.Background())
+	regular := len(bus.frames)
+
+	e.PollTest(context.Background())
+	if got, want := len(bus.frames)-regular, len(testIndexes)*len(testUnits); got != want {
+		t.Errorf("test poll sent %d requests, want %d", got, want)
+	}
+
+	e.HandleFrame(response(stiebel.Manager, 0x0011, 215))   // RAUMISTTEMP, TypeDecVal
+	e.HandleFrame(response(stiebel.Heizmodul, 0x07A6, 183)) // ANZEIGE_HOCHDRUCK, TypeDecVal
+	e.HandleFrame(response(stiebel.Kessel, 0x0806, 0x8000)) // STARTS_ABTAUUNG, no value
+	e.HandleFrame(response(stiebel.Kessel, 0x000C, 100))    // regular metric
+
+	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "test_stiebel_register_value")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`test_stiebel_register_value{index="0x0011",name="RAUMISTTEMP",unit="manager"} 21.5`,
+		`test_stiebel_register_value{index="0x07A6",name="ANZEIGE_HOCHDRUCK",unit="heater"} 18.3`,
+	} {
+		if !strings.Contains(string(got), want+"\n") {
+			t.Errorf("expected %q in\n%s", want, got)
+		}
+	}
+	if strings.Contains(string(got), "STARTS_ABTAUUNG") || strings.Contains(string(got), "AUSSENTEMP") {
+		t.Errorf("unexpected series in\n%s", got)
+	}
+	if v := testutil.ToFloat64(e.gauges.outdoorTemperature); v != 10 {
+		t.Errorf("outdoor temperature = %v, want 10", v)
+	}
+}
+
+func TestTestMetricsDisabled(t *testing.T) {
+	bus := &fakeBus{}
+	e, reg := newTestExporter(t, bus)
+
+	e.PollTest(context.Background())
+	if len(bus.frames) != 0 {
+		t.Errorf("test poll without test metrics sent %d requests", len(bus.frames))
+	}
+
+	e.HandleFrame(response(stiebel.Manager, 0x0011, 215))
+	if n, err := testutil.GatherAndCount(reg, "test_stiebel_register_value"); err != nil || n != 0 {
+		t.Errorf("got %d test series, %v", n, err)
+	}
+}
+
+func TestTestIndexesAreKnown(t *testing.T) {
+	seen := map[uint16]bool{}
+	for _, index := range testIndexes {
+		if stiebel.Reading(index) == nil {
+			t.Errorf("test index %04X is not in the Elster table", index)
+		}
+		if seen[index] {
+			t.Errorf("test index %04X is listed twice", index)
+		}
+		seen[index] = true
+	}
+}

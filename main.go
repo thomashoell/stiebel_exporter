@@ -32,11 +32,13 @@ var (
 )
 
 type config struct {
-	device      string
-	listen      string
-	interval    time.Duration
-	logLevel    slog.Level
-	showVersion bool
+	device       string
+	listen       string
+	interval     time.Duration
+	logLevel     slog.Level
+	showVersion  bool
+	testMetrics  bool
+	testInterval time.Duration
 }
 
 func parseFlags(args []string, output io.Writer) (config, error) {
@@ -48,6 +50,9 @@ func parseFlags(args []string, output io.Writer) (config, error) {
 	fs.DurationVar(&cfg.interval, "interval", 10*time.Second, "interval between two polls of the heat pump")
 	fs.TextVar(&cfg.logLevel, "log-level", slog.LevelInfo, "log level (debug, info, warn, error)")
 	fs.BoolVar(&cfg.showVersion, "version", false, "print the version and exit")
+	fs.BoolVar(&cfg.testMetrics, "test-metrics", false,
+		"also request experimental, unverified values and export them as test_stiebel_register_value")
+	fs.DurationVar(&cfg.testInterval, "test-interval", time.Minute, "interval between two polls of the test values")
 
 	if err := fs.Parse(args); err != nil {
 		return cfg, err
@@ -57,6 +62,9 @@ func parseFlags(args []string, output io.Writer) (config, error) {
 	}
 	if cfg.interval <= 0 {
 		return cfg, fmt.Errorf("interval must be positive, got %s", cfg.interval)
+	}
+	if cfg.testInterval <= 0 {
+		return cfg, fmt.Errorf("test interval must be positive, got %s", cfg.testInterval)
 	}
 	return cfg, nil
 }
@@ -112,7 +120,12 @@ func serve(ctx context.Context, cfg config, logger *slog.Logger, bus *can.Bus, l
 		buildInfo(),
 	)
 
-	exporter, err := metrics.New(reg, bus, logger)
+	var opts []metrics.Option
+	if cfg.testMetrics {
+		opts = append(opts, metrics.WithTestMetrics(cfg.testInterval))
+		logger.Info("experimental test metrics enabled", "interval", cfg.testInterval)
+	}
+	exporter, err := metrics.New(reg, bus, logger, opts...)
 	if err != nil {
 		return err
 	}
