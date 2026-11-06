@@ -20,7 +20,7 @@ disable the old `wlp_exporter` service before enabling `stiebel_exporter`.
 | `stiebel_outdoor_temperature_celsius` | | `AUSSENTEMP` (0x000C) |
 | `stiebel_heater_hot_gas_temperature_celsius` | | `HEISSGAS_TEMP` (0x0265) |
 | `stiebel_compressor_speed_rpm` | `unit` | `ISTDREHZAHL_VERDICHTER_1/2` (0x063E/0x063F) |
-| `stiebel_compressor_target_speed_rpm` | `unit` | `SOLLDREHZAHL_VERDICHTER_1` (0x063C) |
+| `stiebel_compressor_target_speed_rpm` | `unit` | `SOLLDREHZAHL_VERDICHTER_1/2` (0x063C/0x063D) |
 | `stiebel_heating_flow_setpoint_celsius` | | `KESSELSOLLTEMP` (0x0002) |
 | `stiebel_boiler_tank_setpoint_celsius` | | `SPEICHERSOLLTEMP` (0x0003) |
 | `stiebel_room_comfort_setpoint_celsius` | | `RAUMSOLLTEMP_I` (0x0005) |

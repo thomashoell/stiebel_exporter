@@ -94,6 +94,7 @@ func TestHandleFrame(t *testing.T) {
 		{"heater flow temperature", stiebel.Heizmodul, 0x0822, 308, "stiebel_heater_flow_temperature_celsius", "stiebel_heater_flow_temperature_celsius 30.8"},
 		{"heater return temperature", stiebel.Heizmodul, 0x0823, 252, "stiebel_heater_return_temperature_celsius", "stiebel_heater_return_temperature_celsius 25.2"},
 		{"compressor target speed", stiebel.Heizmodul, 0x063C, 2400, "stiebel_compressor_target_speed_rpm", `stiebel_compressor_target_speed_rpm{unit="1"} 2400`},
+		{"compressor 2 target speed", stiebel.Heizmodul, 0x063D, 2400, "stiebel_compressor_target_speed_rpm", `stiebel_compressor_target_speed_rpm{unit="2"} 2400`},
 		{"fan speed", stiebel.Heizmodul, 0x0833, 450, "stiebel_heater_fan_speed_rpm", "stiebel_heater_fan_speed_rpm 450"},
 		{"defrost active", stiebel.Heizmodul, 0x0061, 1, "stiebel_heater_defrost_active", "stiebel_heater_defrost_active 1"},
 		{"defrosts", stiebel.Heizmodul, 0x0806, 7898, "stiebel_heater_defrosts", "stiebel_heater_defrosts 7898"},
@@ -214,7 +215,7 @@ func TestPoll(t *testing.T) {
 	for i := uint16(0x0922); i <= 0x0929; i++ {
 		want = append(want, request{stiebel.Heizmodul, i})
 	}
-	for _, i := range []uint16{0x063E, 0x063F, 0x0265, 0x0822, 0x0823, 0x063C, 0x0833, 0x0061, 0x0806, 0x0807} {
+	for _, i := range []uint16{0x063E, 0x063F, 0x0265, 0x0822, 0x0823, 0x063C, 0x063D, 0x0833, 0x0061, 0x0806, 0x0807} {
 		want = append(want, request{stiebel.Heizmodul, i})
 	}
 
