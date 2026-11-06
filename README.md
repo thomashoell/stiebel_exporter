@@ -50,7 +50,8 @@ interface fails, so systemd can restart it.
 ## Installation
 
 The [releases](https://github.com/thomashoell/stiebel_exporter/releases) contain Linux binaries for `amd64`,
-`arm64` and `armv7` (Raspberry Pi with a 32 bit OS). `checksums.txt` is signed with Sigstore and the archives
+`arm64` and `armv7` (Raspberry Pi with a 32 bit OS; with a 64 bit kernel, `uname -m` = `aarch64`, the `arm64`
+binary runs as well). `checksums.txt` is signed with Sigstore and the archives
 have build provenance attestations:
 
 ```bash
