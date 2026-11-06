@@ -25,7 +25,8 @@ ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes
 RestrictAddressFamilies=AF_CAN AF_INET AF_INET6 AF_UNIX AF_NETLINK
-SystemCallArchitectures=native
+# no SystemCallArchitectures=native: on a 32 bit userland with a 64 bit kernel (e.g. Raspberry Pi OS armhf on a
+# Pi 3 or newer), "native" means arm64 and the seccomp filter kills the armv7 binary with SIGSYS
 
 [Install]
 WantedBy=multi-user.target
