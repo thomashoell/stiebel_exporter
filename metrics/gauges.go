@@ -131,7 +131,7 @@ func newGauges() *gauges {
 		compressorTargetSpeedRpm: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "compressor_target_speed_rpm",
-			Help:      "The compressor's target revolutions per minute (SOLLDREHZAHL_VERDICHTER).",
+			Help:      "The compressor's target revolutions per minute (SOLLDREHZAHL_VERDICHTER_1/2).",
 		}, []string{"unit"}),
 		fanSpeedRpm: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -267,6 +267,7 @@ func newUnits(g *gauges) []*unit {
 		indexSetter{0x0822, set(g.heaterFlowTemperature)},                                 // VORLAUFISTTEMP_WP_IWS
 		indexSetter{0x0823, set(g.heaterReturnTemperature)},                               // RUECKLAUFISTTEMP_WP_IWS
 		indexSetter{0x063C, set(g.compressorTargetSpeedRpm.WithLabelValues(compressor1))}, // SOLLDREHZAHL_VERDICHTER_1
+		indexSetter{0x063D, set(g.compressorTargetSpeedRpm.WithLabelValues(compressor2))}, // SOLLDREHZAHL_VERDICHTER_2
 		indexSetter{0x0833, set(g.fanSpeedRpm)},                                           // LUEFTERDREHZAHL
 		indexSetter{0x0061, set(g.defrostActive)},                                         // ABTAUUNGAKTIV
 		indexSetter{0x0806, set(g.defrosts)},                                              // STARTS_ABTAUUNG
