@@ -86,6 +86,18 @@ func TestHandleFrame(t *testing.T) {
 		{"compressor 1", stiebel.Heizmodul, 0x063E, 3600, "stiebel_compressor_speed_rpm", `stiebel_compressor_speed_rpm{unit="1"} 3600`},
 		{"compressor 2", stiebel.Heizmodul, 0x063F, 0, "stiebel_compressor_speed_rpm", `stiebel_compressor_speed_rpm{unit="2"} 0`},
 		{"hot gas temperature", stiebel.Heizmodul, 0x0265, 652, "stiebel_heater_hot_gas_temperature_celsius", "stiebel_heater_hot_gas_temperature_celsius 65.2"},
+		{"heating flow set point", stiebel.Kessel, 0x0002, 324, "stiebel_heating_flow_setpoint_celsius", "stiebel_heating_flow_setpoint_celsius 32.4"},
+		{"tank set point", stiebel.Kessel, 0x0003, 480, "stiebel_boiler_tank_setpoint_celsius", "stiebel_boiler_tank_setpoint_celsius 48"},
+		{"room comfort set point", stiebel.Kessel, 0x0005, 220, "stiebel_room_comfort_setpoint_celsius", "stiebel_room_comfort_setpoint_celsius 22"},
+		{"operating mode", stiebel.Kessel, 0x0112, 0x0300, "stiebel_operating_mode", `stiebel_operating_mode{mode="Tagbetrieb"} 768`},
+		{"unknown operating mode", stiebel.Kessel, 0x0112, 0x0900, "stiebel_operating_mode", `stiebel_operating_mode{mode="unknown"} 2304`},
+		{"heater flow temperature", stiebel.Heizmodul, 0x0822, 308, "stiebel_heater_flow_temperature_celsius", "stiebel_heater_flow_temperature_celsius 30.8"},
+		{"heater return temperature", stiebel.Heizmodul, 0x0823, 252, "stiebel_heater_return_temperature_celsius", "stiebel_heater_return_temperature_celsius 25.2"},
+		{"compressor target speed", stiebel.Heizmodul, 0x063C, 2400, "stiebel_compressor_target_speed_rpm", `stiebel_compressor_target_speed_rpm{unit="1"} 2400`},
+		{"fan speed", stiebel.Heizmodul, 0x0833, 450, "stiebel_heater_fan_speed_rpm", "stiebel_heater_fan_speed_rpm 450"},
+		{"defrost active", stiebel.Heizmodul, 0x0061, 1, "stiebel_heater_defrost_active", "stiebel_heater_defrost_active 1"},
+		{"defrosts", stiebel.Heizmodul, 0x0806, 7898, "stiebel_heater_defrosts", "stiebel_heater_defrosts 7898"},
+		{"last defrost duration", stiebel.Heizmodul, 0x0807, 173, "stiebel_heater_last_defrost_duration_seconds", "stiebel_heater_last_defrost_duration_seconds 173"},
 	}
 
 	for _, tt := range tests {
@@ -190,7 +202,7 @@ func TestPoll(t *testing.T) {
 
 	// the same requests as before the refactoring, in the same order
 	var want []request
-	for _, i := range []uint16{0x0016, 0x01D6, 0x000C, 0x000E} {
+	for _, i := range []uint16{0x0016, 0x01D6, 0x000C, 0x000E, 0x0002, 0x0003, 0x0005, 0x0112} {
 		want = append(want, request{stiebel.Kessel, i})
 	}
 	for i := uint16(0x091A); i <= 0x0921; i++ {
@@ -202,7 +214,7 @@ func TestPoll(t *testing.T) {
 	for i := uint16(0x0922); i <= 0x0929; i++ {
 		want = append(want, request{stiebel.Heizmodul, i})
 	}
-	for _, i := range []uint16{0x063E, 0x063F, 0x0265} {
+	for _, i := range []uint16{0x063E, 0x063F, 0x0265, 0x0822, 0x0823, 0x063C, 0x0833, 0x0061, 0x0806, 0x0807} {
 		want = append(want, request{stiebel.Heizmodul, i})
 	}
 
@@ -338,9 +350,9 @@ func TestTestMetrics(t *testing.T) {
 		t.Errorf("test poll sent %d requests, want %d", got, want)
 	}
 
-	e.HandleFrame(response(stiebel.Manager, 0x0011, 215))   // RAUMISTTEMP, TypeDecVal
+	e.HandleFrame(response(stiebel.Manager, 0x0074, 1))     // EVU_SPERRE_AKTIV, TypeNone
 	e.HandleFrame(response(stiebel.Heizmodul, 0x07A6, 183)) // ANZEIGE_HOCHDRUCK, TypeDecVal
-	e.HandleFrame(response(stiebel.Kessel, 0x0806, 0x8000)) // STARTS_ABTAUUNG, no value
+	e.HandleFrame(response(stiebel.Kessel, 0x01DA, 0x8000)) // VOLUMENSTROM, no value
 	e.HandleFrame(response(stiebel.Kessel, 0x000C, 100))    // regular metric
 
 	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "test_stiebel_register_value")
@@ -348,14 +360,14 @@ func TestTestMetrics(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		`test_stiebel_register_value{index="0x0011",name="RAUMISTTEMP",unit="manager"} 21.5`,
+		`test_stiebel_register_value{index="0x0074",name="EVU_SPERRE_AKTIV",unit="manager"} 1`,
 		`test_stiebel_register_value{index="0x07A6",name="ANZEIGE_HOCHDRUCK",unit="heater"} 18.3`,
 	} {
 		if !strings.Contains(string(got), want+"\n") {
 			t.Errorf("expected %q in\n%s", want, got)
 		}
 	}
-	if strings.Contains(string(got), "STARTS_ABTAUUNG") || strings.Contains(string(got), "AUSSENTEMP") {
+	if strings.Contains(string(got), "VOLUMENSTROM") || strings.Contains(string(got), "AUSSENTEMP") {
 		t.Errorf("unexpected series in\n%s", got)
 	}
 	if v := testutil.ToFloat64(e.gauges.outdoorTemperature); v != 10 {
@@ -372,7 +384,7 @@ func TestTestMetricsDisabled(t *testing.T) {
 		t.Errorf("test poll without test metrics sent %d requests", len(bus.frames))
 	}
 
-	e.HandleFrame(response(stiebel.Manager, 0x0011, 215))
+	e.HandleFrame(response(stiebel.Manager, 0x0074, 1))
 	if n, err := testutil.GatherAndCount(reg, "test_stiebel_register_value"); err != nil || n != 0 {
 		t.Errorf("got %d test series, %v", n, err)
 	}
@@ -388,5 +400,19 @@ func TestTestIndexesAreKnown(t *testing.T) {
 			t.Errorf("test index %04X is listed twice", index)
 		}
 		seen[index] = true
+	}
+}
+
+func TestOperatingModeKeepsOnlyCurrentMode(t *testing.T) {
+	e, reg := newTestExporter(t, &fakeBus{})
+	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0300)) // Tagbetrieb
+	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0200)) // Automatik
+
+	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "stiebel_operating_mode")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(got), `stiebel_operating_mode{mode="Automatik"} 512`) || strings.Contains(string(got), "Tagbetrieb") {
+		t.Errorf("unexpected operating mode series:\n%s", got)
 	}
 }

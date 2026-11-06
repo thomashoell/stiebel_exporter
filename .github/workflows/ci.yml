@@ -217,8 +217,8 @@ jobs:
           # total heat produced for heating (0x0931) 39 MWh
           cansend vcan0 180#D2000C007B
           cansend vcan0 180#D200FA09310027
-          # test metrics: the manager (0x480) answers the room temperature (0x0011) 21.5 °C
-          cansend vcan0 480#D2001100D7
+          # test metrics: the manager (0x480) answers EVU_SPERRE_AKTIV (0x0074) = 1
+          cansend vcan0 480#D200740001
           sleep 1
           curl -fsS http://127.0.0.1:9000/metrics > metrics.txt
 
@@ -226,7 +226,7 @@ jobs:
             || { echo "::error::outdoor temperature not exported"; exit 1; }
           grep -q '^stiebel_heat_produced_watt_hours{component="heat",heat_generator="1",magnitude="MWH",time_frame="total"} 3.9e+07$' metrics.txt \
             || { echo "::error::heat produced not exported"; exit 1; }
-          grep -q '^test_stiebel_register_value{index="0x0011",name="RAUMISTTEMP",unit="manager"} 21.5$' metrics.txt \
+          grep -q '^test_stiebel_register_value{index="0x0074",name="EVU_SPERRE_AKTIV",unit="manager"} 1$' metrics.txt \
             || { echo "::error::test metric not exported"; exit 1; }
           grep -q '^stiebel_exporter_build_info{' metrics.txt \
             || { echo "::error::stiebel_exporter_build_info missing"; exit 1; }

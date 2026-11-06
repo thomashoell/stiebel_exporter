@@ -147,9 +147,11 @@ func TestServe(t *testing.T) {
 
 	body := waitFor(t, func() (string, bool) {
 		body, err := get(url + "/metrics")
-		return body, err == nil && strings.Contains(body, "stiebel_outdoor_temperature_celsius 12.3")
+		// a scrape can run while the response is handled, so wait for all of its metrics
+		return body, err == nil && strings.Contains(body, "stiebel_outdoor_temperature_celsius 12.3") &&
+			strings.Contains(body, `stiebel_exporter_responses_total{unit="boiler"} 1`)
 	})
-	for _, want := range []string{"stiebel_exporter_build_info{", "go_goroutines", `stiebel_exporter_responses_total{unit="boiler"} 1`} {
+	for _, want := range []string{"stiebel_exporter_build_info{", "go_goroutines"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("/metrics does not contain %q", want)
 		}
