@@ -233,12 +233,14 @@ jobs:
 
           # Prometheus lint of the exposition format. The *_watt_hours names are known issues, kept because
           # the Grafana dashboards use them; anything else fails the job.
+          # pull first: docker run would print the pull progress to stderr, which ends up in $problems
+          docker pull -q "prom/prometheus:${PROMETHEUS_VERSION}" > /dev/null
           problems=$(docker run --rm -i --entrypoint promtool "prom/prometheus:${PROMETHEUS_VERSION}" check metrics < metrics.txt 2>&1 \
             | grep -v -e '^stiebel_electrical_power_consumption_watt_hours use base unit' \
                       -e '^stiebel_heat_produced_watt_hours use base unit' || true)
           if [ -n "$problems" ]; then
-            echo "::error::promtool reported issues with the exposed metrics"
             echo "$problems"
+            echo "::error::promtool reported issues with the exposed metrics: $(echo "$problems" | head -n 5 | tr '\n' ' ')"
             exit 1
           fi
 
