@@ -2,6 +2,8 @@ module github.com/thomashoell/stiebel_exporter
 
 go 1.26.0
 
+toolchain go1.26.10
+
 require (
 	github.com/brutella/can v0.0.2
 	github.com/prometheus/client_golang v1.25.0

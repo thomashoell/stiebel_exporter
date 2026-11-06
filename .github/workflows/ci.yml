@@ -132,8 +132,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # fails as long as release.yml has never run on main (e.g. before the first merge)
           run_id=$(gh run list -R "$GITHUB_REPOSITORY" --workflow release.yml --branch main --status success \
-            --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+            --limit 1 --json databaseId --jq '.[0].databaseId // empty' 2>/dev/null) || run_id=""
           if [ -z "$run_id" ] || ! gh run download "$run_id" -R "$GITHUB_REPOSITORY" -n coverage -D base; then
             echo "::notice::No coverage of main found, the report shows absolute values only"
           fi
@@ -175,9 +176,21 @@ jobs:
 
       - name: Set up vcan0
         run: |
+          # errors are reported as annotations, which (unlike logs) are visible without signing in
+          install() {
+            if ! out=$(sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q "$@" 2>&1); then
+              echo "$out"
+              echo "::error::apt-get install $* failed on $(lsb_release -ds), kernel $(uname -r): $(echo "$out" | grep -E '^E:' | head -n 3 | tr '\n' ' ')"
+              exit 1
+            fi
+          }
           sudo apt-get update -q
-          sudo apt-get install -y -q can-utils "linux-modules-extra-$(uname -r)"
-          sudo modprobe vcan
+          install can-utils
+          # vcan is in linux-modules-extra on the Azure kernels of the hosted runners
+          if ! sudo modprobe vcan 2>/dev/null; then
+            install "linux-modules-extra-$(uname -r)"
+            sudo modprobe vcan
+          fi
           sudo ip link add dev vcan0 type vcan
           sudo ip link set up vcan0
 
@@ -185,6 +198,7 @@ jobs:
         run: CGO_ENABLED=0 go build -o "$RUNNER_TEMP/smoke/stiebel_exporter" .
 
       - name: Start stiebel_exporter on vcan0
+        id: start
         working-directory: ${{ runner.temp }}/smoke
         run: |
           # record the requests of the exporter
@@ -229,7 +243,8 @@ jobs:
           fi
 
       - name: Stop and check shutdown
-        if: always()
+        # also when the checks failed, to show the logs; not if the exporter never started
+        if: always() && steps.start.outcome == 'success'
         working-directory: ${{ runner.temp }}/smoke
         run: |
           kill "$(cat candump.pid)" 2>/dev/null || true
@@ -290,6 +305,8 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      # the CodeQL action reads the workflow run (status reports)
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
