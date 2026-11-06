@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/brutella/can"
@@ -33,13 +34,27 @@ type Exporter struct {
 	requestGap     time.Duration
 	publishBackoff time.Duration
 
+	// testInterval is the interval of the test index polls, 0 if they are disabled
+	testInterval time.Duration
+
 	responses     *prometheus.CounterVec
 	lastResponse  *prometheus.GaugeVec
 	publishErrors prometheus.Counter
 }
 
+// Option configures an Exporter.
+type Option func(*Exporter)
+
+// WithTestMetrics additionally requests the experimental test indexes (see testIndexes) from all units every
+// interval and exports them as test_stiebel_register_value.
+func WithTestMetrics(interval time.Duration) Option {
+	return func(e *Exporter) {
+		e.testInterval = interval
+	}
+}
+
 // New creates an Exporter that sends its requests to bus and registers its metrics with reg.
-func New(reg prometheus.Registerer, bus stiebel.Publisher, logger *slog.Logger) (*Exporter, error) {
+func New(reg prometheus.Registerer, bus stiebel.Publisher, logger *slog.Logger, opts ...Option) (*Exporter, error) {
 	g := newGauges()
 	e := &Exporter{
 		bus:            bus,
@@ -68,7 +83,20 @@ func New(reg prometheus.Registerer, bus stiebel.Publisher, logger *slog.Logger) 
 		}),
 	}
 
+	for _, opt := range opts {
+		opt(e)
+	}
+
 	collectors := append(g.collectors(), e.responses, e.lastResponse, e.publishErrors)
+	if e.testInterval > 0 {
+		testValues := newTestValues()
+		for _, u := range e.units {
+			if slices.Contains(testUnits, u.name) {
+				u.addTestIndexes(testValues)
+			}
+		}
+		collectors = append(collectors, testValues)
+	}
 	for _, c := range collectors {
 		if err := reg.Register(c); err != nil {
 			return nil, err
@@ -127,13 +155,19 @@ func (e *Exporter) HandleFrame(frm can.Frame) {
 	setter(val)
 }
 
-// Run requests the values of all polled indexes every interval until ctx is canceled.
+// Run requests the values of all polled indexes every interval until ctx is canceled. With test metrics, the test
+// indexes are requested after the regular ones, once per test interval.
 func (e *Exporter) Run(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	var lastTestPoll time.Time
 	for {
 		e.Poll(ctx)
+		if e.testInterval > 0 && time.Since(lastTestPoll) >= e.testInterval {
+			lastTestPoll = time.Now()
+			e.PollTest(ctx)
+		}
 
 		select {
 		case <-ctx.Done():
@@ -145,8 +179,17 @@ func (e *Exporter) Run(ctx context.Context, interval time.Duration) {
 
 // Poll requests the values of all polled indexes once.
 func (e *Exporter) Poll(ctx context.Context) {
+	e.poll(ctx, func(u *unit) []uint16 { return u.polled })
+}
+
+// PollTest requests the values of all test indexes once.
+func (e *Exporter) PollTest(ctx context.Context) {
+	e.poll(ctx, func(u *unit) []uint16 { return u.testPolled })
+}
+
+func (e *Exporter) poll(ctx context.Context, indexes func(*unit) []uint16) {
 	for _, u := range e.units {
-		for _, index := range u.polled {
+		for _, index := range indexes(u) {
 			if err := e.request(ctx, u.id, index); err != nil {
 				if ctx.Err() != nil {
 					return

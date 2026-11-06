@@ -28,16 +28,25 @@ func TestParseFlags(t *testing.T) {
 		t.Errorf("unexpected defaults: %+v", cfg)
 	}
 
-	cfg, err = parseFlags([]string{"-device", "can1", "-listen", "127.0.0.1:9100", "-interval", "30s", "-log-level", "debug"}, io.Discard)
+	if cfg.testMetrics || cfg.testInterval != time.Minute {
+		t.Errorf("unexpected test metric defaults: %+v", cfg)
+	}
+
+	cfg, err = parseFlags([]string{"-device", "can1", "-listen", "127.0.0.1:9100", "-interval", "30s", "-log-level", "debug",
+		"-test-metrics", "-test-interval", "5m"}, io.Discard)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if cfg.device != "can1" || cfg.listen != "127.0.0.1:9100" || cfg.interval != 30*time.Second || cfg.logLevel != slog.LevelDebug {
 		t.Errorf("unexpected config: %+v", cfg)
 	}
+	if !cfg.testMetrics || cfg.testInterval != 5*time.Minute {
+		t.Errorf("unexpected test metric config: %+v", cfg)
+	}
 
 	for _, args := range [][]string{
 		{"-interval", "0s"},
+		{"-test-interval", "0s"},
 		{"-log-level", "verbose"},
 		{"-unknown"},
 		{"extra"},

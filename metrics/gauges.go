@@ -148,6 +148,8 @@ type unit struct {
 	// setters maps the Elster indexes in responses of this unit to metrics. Responses to indexes that are
 	// not polled are exported too, e.g. if another participant (ComfortSoft) requested them.
 	setters map[uint16]setter
+	// testPolled lists the test indexes requested from this unit, see testIndexes.
+	testPolled []uint16
 }
 
 func newUnits(g *gauges) []*unit {

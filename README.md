@@ -30,6 +30,20 @@ The exporter itself exposes `stiebel_exporter_build_info`, `stiebel_exporter_res
 `stiebel_exporter_last_response_timestamp_seconds{unit}` (alert on stale data with this),
 `stiebel_exporter_publish_errors_total` and the Go/process metrics.
 
+### Experimental metrics
+
+With `-test-metrics`, the exporter additionally asks the boiler, the heat module and the manager (`0x480`) for
+about 35 more Elster indexes (set points, room, evaporator and condenser temperatures, refrigerant pressures,
+flow, fan speed, defrosting, run times, status words; see `metrics/testmetrics.go`) and exports every answer as
+
+```
+test_stiebel_register_value{unit="manager",index="0x0011",name="RAUMISTTEMP"} 21.5
+```
+
+Indexes a unit doesn't know never show up. Names and scaling come from the can_progs table and are not verified:
+compare the values with the heat pump's display, then promote the useful ones to proper `stiebel_*` metrics.
+The test values are polled once per `-test-interval` (each request takes ~50 ms of bus time).
+
 ## Usage
 
 ```
@@ -42,6 +56,8 @@ stiebel_exporter [-device can0] [-listen :9000] [-interval 10s] [-log-level info
 | `-listen` | `:9000` | address of the metrics endpoint (`/metrics`) |
 | `-interval` | `10s` | interval between two polls of the heat pump |
 | `-log-level` | `info` | `debug` logs every frame that is not exported |
+| `-test-metrics` | `false` | also request experimental values, see below |
+| `-test-interval` | `1m` | interval between two polls of the experimental values |
 | `-version` | | print the version and exit |
 
 The CAN interface has to be up before the exporter starts. The exporter exits with a non-zero status if the
