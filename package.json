@@ -1,7 +1,7 @@
 {
-  "name": "wlp-exporter-release-tooling",
+  "name": "stiebel-exporter-release-tooling",
   "private": true,
-  "description": "Release tooling (semantic-release) for wlp_exporter; not part of the Go application",
+  "description": "Release tooling (semantic-release) for stiebel_exporter; not part of the Go application",
   "engines": {
     "node": ">=24.10.0"
   },

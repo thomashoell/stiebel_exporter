@@ -182,15 +182,15 @@ jobs:
           sudo ip link set up vcan0
 
       - name: Build binary
-        run: CGO_ENABLED=0 go build -o "$RUNNER_TEMP/smoke/wlp_exporter" .
+        run: CGO_ENABLED=0 go build -o "$RUNNER_TEMP/smoke/stiebel_exporter" .
 
-      - name: Start wlp_exporter on vcan0
+      - name: Start stiebel_exporter on vcan0
         working-directory: ${{ runner.temp }}/smoke
         run: |
           # record the requests of the exporter
           candump -L vcan0 > candump.log &
           echo $! > candump.pid
-          ./wlp_exporter -device vcan0 -listen 127.0.0.1:9000 -interval 2s -log-level debug > exporter.log 2>&1 &
+          ./stiebel_exporter -device vcan0 -listen 127.0.0.1:9000 -interval 2s -log-level debug > exporter.log 2>&1 &
           echo $! > exporter.pid
 
       - name: Check requests and /metrics
@@ -238,7 +238,7 @@ jobs:
           # graceful shutdown on SIGTERM
           for _ in $(seq 1 50); do kill -0 "$pid" 2>/dev/null || break; sleep 0.1; done
           if kill -0 "$pid" 2>/dev/null; then
-            echo "::error::wlp_exporter did not stop on SIGTERM"
+            echo "::error::stiebel_exporter did not stop on SIGTERM"
             kill -KILL "$pid"
             status=1
           fi

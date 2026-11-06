@@ -1,15 +1,15 @@
-# systemd unit for wlp_exporter, e.g. /etc/systemd/system/wlp_exporter.service
+# systemd unit for stiebel_exporter, e.g. /etc/systemd/system/stiebel_exporter.service
 # The CAN interface (can0) has to be up before the service starts, e.g. via systemd-networkd:
 #   /etc/systemd/network/80-can.network: [Match] Name=can0 / [CAN] BitRate=20K
 [Unit]
 Description=Prometheus exporter for Stiebel Eltron heat pumps (CAN bus)
-Documentation=https://github.com/thomashoell/wlp_exporter
+Documentation=https://github.com/thomashoell/stiebel_exporter
 Wants=network-online.target
 After=network-online.target sys-subsystem-net-devices-can0.device
 BindsTo=sys-subsystem-net-devices-can0.device
 
 [Service]
-ExecStart=/usr/local/bin/wlp_exporter -device can0 -listen :9000
+ExecStart=/usr/local/bin/stiebel_exporter -device can0 -listen :9000
 Restart=on-failure
 RestartSec=10s
 

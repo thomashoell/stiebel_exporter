@@ -48,7 +48,7 @@ formatters:
   settings:
     goimports:
       local-prefixes:
-        - github.com/thomashoell/wlp_exporter
+        - github.com/thomashoell/stiebel_exporter
 
 issues:
   max-issues-per-linter: 0

@@ -15,7 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/prometheus/common/expfmt"
 
-	"github.com/thomashoell/wlp_exporter/stiebel"
+	"github.com/thomashoell/stiebel_exporter/stiebel"
 )
 
 // fakeBus records published frames and fails the first failures calls.

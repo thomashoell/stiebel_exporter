@@ -3,7 +3,7 @@ package metrics
 import (
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/thomashoell/wlp_exporter/stiebel"
+	"github.com/thomashoell/stiebel_exporter/stiebel"
 )
 
 // Metric names and labels are used by the Grafana dashboards, keep them stable.

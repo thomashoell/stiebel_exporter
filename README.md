@@ -1,11 +1,14 @@
-# wlp_exporter - Prometheus exporter for Stiebel Eltron heat pumps
+# stiebel_exporter - Prometheus exporter for Stiebel Eltron heat pumps
 
-[![CI](https://github.com/thomashoell/wlp_exporter/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/thomashoell/wlp_exporter/actions/workflows/release.yml)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/thomashoell/wlp_exporter/badge)](https://scorecard.dev/viewer/?uri=github.com/thomashoell/wlp_exporter)
+[![CI](https://github.com/thomashoell/stiebel_exporter/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/thomashoell/stiebel_exporter/actions/workflows/release.yml)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/thomashoell/stiebel_exporter/badge)](https://scorecard.dev/viewer/?uri=github.com/thomashoell/stiebel_exporter)
 
-*wlp_exporter* reads values from a Stiebel Eltron heat pump over its CAN bus (Elster protocol) and exports
+*stiebel_exporter* reads values from a Stiebel Eltron heat pump over its CAN bus (Elster protocol) and exports
 them as Prometheus metrics. It acts like ComfortSoft (CAN ID `0x680`): every interval it requests a fixed set
 of values from the boiler (`0x180`) and the heat module (`0x500`) and exports the responses.
+
+The project was called *wlp_exporter* before; the metric names did not change. When upgrading a host, stop and
+disable the old `wlp_exporter` service before enabling `stiebel_exporter`.
 
 ## Metrics
 
@@ -30,7 +33,7 @@ The exporter itself exposes `stiebel_exporter_build_info`, `stiebel_exporter_res
 ## Usage
 
 ```
-wlp_exporter [-device can0] [-listen :9000] [-interval 10s] [-log-level info]
+stiebel_exporter [-device can0] [-listen :9000] [-interval 10s] [-log-level info]
 ```
 
 | Flag | Default | Description |
@@ -46,18 +49,18 @@ interface fails, so systemd can restart it.
 
 ## Installation
 
-The [releases](https://github.com/thomashoell/wlp_exporter/releases) contain Linux binaries for `amd64`,
+The [releases](https://github.com/thomashoell/stiebel_exporter/releases) contain Linux binaries for `amd64`,
 `arm64` and `armv7` (Raspberry Pi with a 32 bit OS). `checksums.txt` is signed with Sigstore and the archives
 have build provenance attestations:
 
 ```bash
 version=1.0.0
-curl -fsSLO "https://github.com/thomashoell/wlp_exporter/releases/download/${version}/wlp_exporter_${version}_linux_armv7.tar.gz"
-gh attestation verify "wlp_exporter_${version}_linux_armv7.tar.gz" --repo thomashoell/wlp_exporter
-tar xzf "wlp_exporter_${version}_linux_armv7.tar.gz"
-sudo install -m 0755 wlp_exporter /usr/local/bin/
-sudo install -m 0644 wlp_exporter.service /etc/systemd/system/
-sudo systemctl daemon-reload && sudo systemctl enable --now wlp_exporter
+curl -fsSLO "https://github.com/thomashoell/stiebel_exporter/releases/download/${version}/stiebel_exporter_${version}_linux_armv7.tar.gz"
+gh attestation verify "stiebel_exporter_${version}_linux_armv7.tar.gz" --repo thomashoell/stiebel_exporter
+tar xzf "stiebel_exporter_${version}_linux_armv7.tar.gz"
+sudo install -m 0755 stiebel_exporter /usr/local/bin/
+sudo install -m 0644 stiebel_exporter.service /etc/systemd/system/
+sudo systemctl daemon-reload && sudo systemctl enable --now stiebel_exporter
 ```
 
 ## Development
@@ -79,7 +82,7 @@ To try the exporter without a heat pump, use a virtual CAN interface and answer 
 
 ```bash
 sudo modprobe vcan && sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0
-./wlp_exporter -device vcan0 -log-level debug &
+./stiebel_exporter -device vcan0 -log-level debug &
 cansend vcan0 180#D2000C007B    # boiler: outdoor temperature 12.3 °C
 curl -s localhost:9000/metrics | grep outdoor
 ```

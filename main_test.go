@@ -16,7 +16,7 @@ import (
 
 	"github.com/brutella/can"
 
-	"github.com/thomashoell/wlp_exporter/stiebel"
+	"github.com/thomashoell/stiebel_exporter/stiebel"
 )
 
 func TestParseFlags(t *testing.T) {

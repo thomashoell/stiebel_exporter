@@ -1,4 +1,4 @@
-EXECUTABLE=wlp_exporter
+EXECUTABLE=stiebel_exporter
 
 # if environment variables are defined (e.g. through GitHub Actions), use that. Otherwise, try to resolve them during build
 GIT_COMMIT ?= $(shell git rev-list -1 HEAD | cut -c1-7)

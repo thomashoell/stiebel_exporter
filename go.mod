@@ -1,4 +1,4 @@
-module github.com/thomashoell/wlp_exporter
+module github.com/thomashoell/stiebel_exporter
 
 go 1.26.0
 

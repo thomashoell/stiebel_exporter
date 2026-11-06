@@ -1,4 +1,4 @@
-// wlp_exporter reads values from a Stiebel Eltron heat pump over the CAN bus and exports them as
+// stiebel_exporter reads values from a Stiebel Eltron heat pump over the CAN bus and exports them as
 // Prometheus metrics.
 package main
 
@@ -22,7 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/thomashoell/wlp_exporter/metrics"
+	"github.com/thomashoell/stiebel_exporter/metrics"
 )
 
 // set by the build (-ldflags "-X main.gitTag=... -X main.gitCommit=...")
@@ -41,7 +41,7 @@ type config struct {
 
 func parseFlags(args []string, output io.Writer) (config, error) {
 	var cfg config
-	fs := flag.NewFlagSet("wlp_exporter", flag.ContinueOnError)
+	fs := flag.NewFlagSet("stiebel_exporter", flag.ContinueOnError)
 	fs.SetOutput(output)
 	fs.StringVar(&cfg.device, "device", "can0", "CAN interface connected to the heat pump")
 	fs.StringVar(&cfg.listen, "listen", ":9000", "address of the metrics endpoint")
@@ -70,7 +70,7 @@ func main() {
 		os.Exit(2)
 	}
 	if cfg.showVersion {
-		fmt.Printf("wlp_exporter %s (commit %s, %s)\n", gitTag, gitCommit, runtime.Version())
+		fmt.Printf("stiebel_exporter %s (commit %s, %s)\n", gitTag, gitCommit, runtime.Version())
 		return
 	}
 
@@ -87,7 +87,7 @@ func main() {
 }
 
 func run(ctx context.Context, cfg config, logger *slog.Logger) error {
-	logger.Info("starting wlp_exporter", "version", gitTag, "commit", gitCommit, "device", cfg.device)
+	logger.Info("starting stiebel_exporter", "version", gitTag, "commit", gitCommit, "device", cfg.device)
 
 	bus, err := can.NewBusForInterfaceWithName(cfg.device)
 	if err != nil {
@@ -174,8 +174,8 @@ func newHandler(reg *prometheus.Registry) http.Handler {
 	}))
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = io.WriteString(w, `<html><head><title>wlp_exporter</title></head>`+
-			`<body><h1>wlp_exporter</h1><p><a href="/metrics">Metrics</a></p></body></html>`)
+		_, _ = io.WriteString(w, `<html><head><title>stiebel_exporter</title></head>`+
+			`<body><h1>stiebel_exporter</h1><p><a href="/metrics">Metrics</a></p></body></html>`)
 	})
 	return mux
 }
@@ -185,7 +185,7 @@ func buildInfo() prometheus.Collector {
 		Namespace: "stiebel",
 		Subsystem: "exporter",
 		Name:      "build_info",
-		Help:      "Version of wlp_exporter, always 1.",
+		Help:      "Version of stiebel_exporter, always 1.",
 	}, []string{"version", "revision", "goversion"})
 	g.WithLabelValues(gitTag, gitCommit, runtime.Version()).Set(1)
 	return g

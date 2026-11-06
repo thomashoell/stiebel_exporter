@@ -11,7 +11,7 @@ import (
 	"github.com/brutella/can"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/thomashoell/wlp_exporter/stiebel"
+	"github.com/thomashoell/stiebel_exporter/stiebel"
 )
 
 const (

@@ -2,12 +2,12 @@
 # https://goreleaser.com/customization/
 version: 2
 
-project_name: wlp_exporter
+project_name: stiebel_exporter
 
 builds:
-  - id: wlp_exporter
+  - id: stiebel_exporter
     main: .
-    binary: wlp_exporter
+    binary: stiebel_exporter
     env:
       - CGO_ENABLED=0
     # SocketCAN is Linux only
@@ -28,13 +28,13 @@ builds:
     mod_timestamp: "{{ .CommitTimestamp }}"
 
 archives:
-  - id: wlp_exporter
+  - id: stiebel_exporter
     formats: [tar.gz]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ with .Arm }}v{{ . }}{{ end }}"
     files:
       - README.md
       - CHANGELOG.md
-      - wlp_exporter.service
+      - stiebel_exporter.service
 
 checksum:
   name_template: checksums.txt
@@ -63,7 +63,7 @@ changelog:
 release:
   github:
     owner: thomashoell
-    name: wlp_exporter
+    name: stiebel_exporter
   mode: keep-existing
 
 snapshot:

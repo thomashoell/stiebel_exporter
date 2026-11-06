@@ -10,7 +10,7 @@ import os
 import sys
 from collections import defaultdict
 
-MODULE = "github.com/thomashoell/wlp_exporter"
+MODULE = "github.com/thomashoell/stiebel_exporter"
 MARKER = "<!-- coverage-report -->"
 
 
@@ -24,7 +24,7 @@ def parse(path):
             line = line.strip()
             if not line or line.startswith("mode:"):
                 continue
-            # github.com/thomashoell/wlp_exporter/stiebel/elster.go:12.34,15.2 3 1
+            # github.com/thomashoell/stiebel_exporter/stiebel/elster.go:12.34,15.2 3 1
             block, stmts, count = line.rsplit(" ", 2)
             stmts, count = int(stmts), int(count)
             # the same block can appear more than once (e.g. merged profiles): count it once
