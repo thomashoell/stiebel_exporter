@@ -93,10 +93,14 @@ func TestHandleFrame(t *testing.T) {
 		{"unknown operating mode", stiebel.Kessel, 0x0112, 0x0900, "stiebel_operating_mode", `stiebel_operating_mode{mode="unknown"} 2304`},
 		{"heater flow temperature", stiebel.Heizmodul, 0x0822, 308, "stiebel_heater_flow_temperature_celsius", "stiebel_heater_flow_temperature_celsius 30.8"},
 		{"heater return temperature", stiebel.Heizmodul, 0x0823, 252, "stiebel_heater_return_temperature_celsius", "stiebel_heater_return_temperature_celsius 25.2"},
-		{"compressor target speed", stiebel.Heizmodul, 0x063C, 2400, "stiebel_compressor_target_speed_rpm", `stiebel_compressor_target_speed_rpm{unit="1"} 2400`},
-		{"compressor 2 target speed", stiebel.Heizmodul, 0x063D, 2400, "stiebel_compressor_target_speed_rpm", `stiebel_compressor_target_speed_rpm{unit="2"} 2400`},
-		{"fan speed", stiebel.Heizmodul, 0x0833, 450, "stiebel_heater_fan_speed_rpm", "stiebel_heater_fan_speed_rpm 450"},
-		{"defrost active", stiebel.Heizmodul, 0x0061, 1, "stiebel_heater_defrost_active", "stiebel_heater_defrost_active 1"},
+		{"fan speed", stiebel.Heizmodul, 0x0833, 76, "stiebel_heater_fan_speed_percent", "stiebel_heater_fan_speed_percent 76"},
+		{"defrost phase", stiebel.Heizmodul, 0x0061, 512, "stiebel_heater_defrost_phase", "stiebel_heater_defrost_phase 1"},
+		{"defrost phase with other bit", stiebel.Heizmodul, 0x0061, 768, "stiebel_heater_defrost_phase", "stiebel_heater_defrost_phase 1"},
+		{"no defrost phase", stiebel.Heizmodul, 0x0061, 256, "stiebel_heater_defrost_phase", "stiebel_heater_defrost_phase 0"},
+		{"high pressure", stiebel.Heizmodul, 0x07A6, 1861, "stiebel_heater_high_pressure_bar", "stiebel_heater_high_pressure_bar 18.61"},
+		{"low pressure", stiebel.Heizmodul, 0x07A7, 697, "stiebel_heater_low_pressure_bar", "stiebel_heater_low_pressure_bar 6.97"},
+		{"hot water charging", stiebel.Kessel, 0x01D2, 0x0251, "stiebel_hot_water_charging", "stiebel_hot_water_charging 1"},    // little endian: 0x5102
+		{"no hot water charging", stiebel.Kessel, 0x01D2, 0x0211, "stiebel_hot_water_charging", "stiebel_hot_water_charging 0"}, // little endian: 0x1102
 		{"defrosts", stiebel.Heizmodul, 0x0806, 7898, "stiebel_heater_defrosts", "stiebel_heater_defrosts 7898"},
 		{"last defrost duration", stiebel.Heizmodul, 0x0807, 173, "stiebel_heater_last_defrost_duration_seconds", "stiebel_heater_last_defrost_duration_seconds 173"},
 	}
@@ -203,7 +207,7 @@ func TestPoll(t *testing.T) {
 
 	// the same requests as before the refactoring, in the same order
 	var want []request
-	for _, i := range []uint16{0x0016, 0x01D6, 0x000C, 0x000E, 0x0002, 0x0003, 0x0005, 0x0112} {
+	for _, i := range []uint16{0x0016, 0x01D6, 0x000C, 0x000E, 0x0002, 0x0003, 0x0005, 0x0112, 0x01D2} {
 		want = append(want, request{stiebel.Kessel, i})
 	}
 	for i := uint16(0x091A); i <= 0x0921; i++ {
@@ -215,7 +219,7 @@ func TestPoll(t *testing.T) {
 	for i := uint16(0x0922); i <= 0x0929; i++ {
 		want = append(want, request{stiebel.Heizmodul, i})
 	}
-	for _, i := range []uint16{0x063E, 0x063F, 0x0265, 0x0822, 0x0823, 0x063C, 0x063D, 0x0833, 0x0061, 0x0806, 0x0807} {
+	for _, i := range []uint16{0x063E, 0x063F, 0x0265, 0x0822, 0x0823, 0x0833, 0x0061, 0x07A6, 0x07A7, 0x0806, 0x0807} {
 		want = append(want, request{stiebel.Heizmodul, i})
 	}
 
@@ -336,6 +340,10 @@ func TestNewFailsOnDuplicateRegistration(t *testing.T) {
 func TestTestMetrics(t *testing.T) {
 	bus := &fakeBus{}
 	reg := prometheus.NewRegistry()
+	// 0x07A6 is exported by the heater, so it is only requested as test index from the boiler and the manager
+	defer func(saved []uint16) { testIndexes = saved }(testIndexes)
+	testIndexes = []uint16{0x0074, 0x07A6, 0x01DA}
+
 	e, err := New(reg, bus, slog.New(slog.NewTextHandler(io.Discard, nil)), WithTestMetrics(time.Minute))
 	if err != nil {
 		t.Fatal(err)
@@ -347,12 +355,12 @@ func TestTestMetrics(t *testing.T) {
 	regular := len(bus.frames)
 
 	e.PollTest(context.Background())
-	if got, want := len(bus.frames)-regular, len(testIndexes)*len(testUnits); got != want {
+	if got, want := len(bus.frames)-regular, len(testIndexes)*len(testUnits)-1; got != want {
 		t.Errorf("test poll sent %d requests, want %d", got, want)
 	}
 
 	e.HandleFrame(response(stiebel.Manager, 0x0074, 1))     // EVU_SPERRE_AKTIV, TypeNone
-	e.HandleFrame(response(stiebel.Heizmodul, 0x07A6, 183)) // ANZEIGE_HOCHDRUCK, TypeDecVal
+	e.HandleFrame(response(stiebel.Kessel, 0x07A6, 1861))   // ANZEIGE_HOCHDRUCK, TypeDecVal
 	e.HandleFrame(response(stiebel.Kessel, 0x01DA, 0x8000)) // VOLUMENSTROM, no value
 	e.HandleFrame(response(stiebel.Kessel, 0x000C, 100))    // regular metric
 
@@ -362,7 +370,7 @@ func TestTestMetrics(t *testing.T) {
 	}
 	for _, want := range []string{
 		`test_stiebel_register_value{index="0x0074",name="EVU_SPERRE_AKTIV",unit="manager"} 1`,
-		`test_stiebel_register_value{index="0x07A6",name="ANZEIGE_HOCHDRUCK",unit="heater"} 18.3`,
+		`test_stiebel_register_value{index="0x07A6",name="ANZEIGE_HOCHDRUCK",unit="boiler"} 186.1`,
 	} {
 		if !strings.Contains(string(got), want+"\n") {
 			t.Errorf("expected %q in\n%s", want, got)
