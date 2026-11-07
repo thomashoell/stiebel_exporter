@@ -20,15 +20,16 @@ disable the old `wlp_exporter` service before enabling `stiebel_exporter`.
 | `stiebel_outdoor_temperature_celsius` | | `AUSSENTEMP` (0x000C) |
 | `stiebel_heater_hot_gas_temperature_celsius` | | `HEISSGAS_TEMP` (0x0265) |
 | `stiebel_compressor_speed_rpm` | `unit` | `ISTDREHZAHL_VERDICHTER_1/2` (0x063E/0x063F) |
-| `stiebel_compressor_target_speed_rpm` | `unit` | `SOLLDREHZAHL_VERDICHTER_1/2` (0x063C/0x063D) |
 | `stiebel_heating_flow_setpoint_celsius` | | `KESSELSOLLTEMP` (0x0002) |
 | `stiebel_boiler_tank_setpoint_celsius` | | `SPEICHERSOLLTEMP` (0x0003) |
 | `stiebel_room_comfort_setpoint_celsius` | | `RAUMSOLLTEMP_I` (0x0005) |
 | `stiebel_operating_mode` | `mode` | `PROGRAMMSCHALTER` (0x0112); value = raw code, e.g. 768 = `Tagbetrieb` |
 | `stiebel_heater_flow_temperature_celsius` | | `VORLAUFISTTEMP_WP_IWS` (0x0822) |
 | `stiebel_heater_return_temperature_celsius` | | `RUECKLAUFISTTEMP_WP_IWS` (0x0823) |
-| `stiebel_heater_fan_speed_rpm` | | `LUEFTERDREHZAHL` (0x0833) |
-| `stiebel_heater_defrost_active` | | `ABTAUUNGAKTIV` (0x0061) |
+| `stiebel_heater_fan_speed_percent` | | `LUEFTERDREHZAHL` (0x0833) |
+| `stiebel_heater_high_pressure_bar`, `stiebel_heater_low_pressure_bar` | | `ANZEIGE_HOCHDRUCK`/`ANZEIGE_NIEDERDRUCK` (0x07A6/0x07A7) |
+| `stiebel_heater_defrost_phase` | | bit 0x0200 of `ABTAUUNGAKTIV` (0x0061): a phase of minutes to hours that usually contains one defrost |
+| `stiebel_hot_water_charging` | | bit 0x4000 of `PUMPENSTATUS` (0x01D2) |
 | `stiebel_heater_defrosts` | | `STARTS_ABTAUUNG` (0x0806), counted by the heat pump |
 | `stiebel_heater_last_defrost_duration_seconds` | | `ZEITDAUER_LETZTE_ABTAUUNG` (0x0807), unit assumed |
 | `stiebel_electrical_power_consumption_watt_hours` | `time_frame`, `magnitude`, `component` | `EL_AUFNAHMELEISTUNG_*` (0x091A–0x0921) |
@@ -44,8 +45,8 @@ The exporter itself exposes `stiebel_exporter_build_info`, `stiebel_exporter_res
 ### Experimental metrics
 
 With `-test-metrics`, the exporter additionally asks the boiler, the heat module and the manager (`0x480`) for
-Elster indexes whose meaning or scaling is not confirmed yet (status bit fields, utility lock, flow rate,
-refrigerant pressures; see `metrics/testmetrics.go`) and exports every answer as
+the Elster indexes listed in `metrics/testmetrics.go` (currently none: all candidates have been evaluated) and
+exports every answer as
 
 ```
 test_stiebel_register_value{unit="manager",index="0x0074",name="EVU_SPERRE_AKTIV"} 1

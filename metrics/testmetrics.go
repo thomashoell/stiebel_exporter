@@ -10,15 +10,9 @@ import (
 // manager (WPM), but not verified on the real device yet: it is unknown which unit answers them and whether the
 // Elster type (and therefore the scaling) from the can_progs table is right. They are exported as
 // test_stiebel_register_value so they can be compared with the heat pump's display before they get proper metrics.
-var testIndexes = []uint16{
-	0x0059, // HEIZKREIS_STATUS, bit field
-	0x005A, // SPEICHER_STATUS, bit field
-	0x01D2, // PUMPENSTATUS, bit field
-	0x0074, // EVU_SPERRE_AKTIV, 1 = blocked or released?
-	0x01DA, // VOLUMENSTROM
-	0x07A6, // ANZEIGE_HOCHDRUCK, probably bar * 100 instead of bar * 10
-	0x07A7, // ANZEIGE_NIEDERDRUCK, probably bar * 100 instead of bar * 10
-}
+//
+// All candidates are evaluated at the moment; add indexes here to test them.
+var testIndexes = []uint16{}
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
 var testUnits = []string{"boiler", "heater", "manager"}
