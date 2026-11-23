@@ -2,7 +2,7 @@ module github.com/thomashoell/stiebel_exporter
 
 go 1.26.0
 
-toolchain go1.26.10
+toolchain go1.26.11
 
 require (
 	github.com/brutella/can v0.0.2
