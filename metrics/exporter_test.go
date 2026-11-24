@@ -83,8 +83,12 @@ func TestHandleFrame(t *testing.T) {
 			`stiebel_heat_produced_watt_hours{component="water",heat_generator="2",magnitude="kWH",time_frame="day"} 2000`},
 		{"heat WE2 from heater", stiebel.Heizmodul, 0x0926, 17, "stiebel_heat_produced_watt_hours",
 			`stiebel_heat_produced_watt_hours{component="heat",heat_generator="2",magnitude="WH",time_frame="day"} 17`},
-		{"compressor 1", stiebel.Heizmodul, 0x063E, 3600, "stiebel_compressor_speed_rpm", `stiebel_compressor_speed_rpm{unit="1"} 3600`},
-		{"compressor 2", stiebel.Heizmodul, 0x063F, 0, "stiebel_compressor_speed_rpm", `stiebel_compressor_speed_rpm{unit="2"} 0`},
+		{"compressor modulation", stiebel.Heizmodul, 0x063D, 76, "stiebel_compressor_modulation_percent", "stiebel_compressor_modulation_percent 76"},
+		{"compressor running", stiebel.Heizmodul, 0x07A8, 0x0018, "stiebel_compressor_running", "stiebel_compressor_running 1"},
+		{"compressor standing still", stiebel.Heizmodul, 0x07A8, 0x0008, "stiebel_compressor_running", "stiebel_compressor_running 0"},
+		{"compressor during defrost", stiebel.Heizmodul, 0x07A8, 0x0108, "stiebel_compressor_running", "stiebel_compressor_running 0"},
+		{"defrost", stiebel.Heizmodul, 0x07A8, 0x0118, "stiebel_heater_defrost_active", "stiebel_heater_defrost_active 1"},
+		{"no defrost", stiebel.Heizmodul, 0x07A8, 0x0018, "stiebel_heater_defrost_active", "stiebel_heater_defrost_active 0"},
 		{"hot gas temperature", stiebel.Heizmodul, 0x0265, 652, "stiebel_heater_hot_gas_temperature_celsius", "stiebel_heater_hot_gas_temperature_celsius 65.2"},
 		{"heating flow set point", stiebel.Kessel, 0x0002, 324, "stiebel_heating_flow_setpoint_celsius", "stiebel_heating_flow_setpoint_celsius 32.4"},
 		{"tank set point", stiebel.Kessel, 0x0003, 480, "stiebel_boiler_tank_setpoint_celsius", "stiebel_boiler_tank_setpoint_celsius 48"},
@@ -94,9 +98,9 @@ func TestHandleFrame(t *testing.T) {
 		{"heater flow temperature", stiebel.Heizmodul, 0x0822, 308, "stiebel_heater_flow_temperature_celsius", "stiebel_heater_flow_temperature_celsius 30.8"},
 		{"heater return temperature", stiebel.Heizmodul, 0x0823, 252, "stiebel_heater_return_temperature_celsius", "stiebel_heater_return_temperature_celsius 25.2"},
 		{"fan speed", stiebel.Heizmodul, 0x0833, 76, "stiebel_heater_fan_speed_percent", "stiebel_heater_fan_speed_percent 76"},
-		{"defrost phase", stiebel.Heizmodul, 0x0061, 512, "stiebel_heater_defrost_phase", "stiebel_heater_defrost_phase 1"},
-		{"defrost phase with other bit", stiebel.Heizmodul, 0x0061, 768, "stiebel_heater_defrost_phase", "stiebel_heater_defrost_phase 1"},
-		{"no defrost phase", stiebel.Heizmodul, 0x0061, 256, "stiebel_heater_defrost_phase", "stiebel_heater_defrost_phase 0"},
+		{"heating cycle", stiebel.Heizmodul, 0x0061, 512, "stiebel_heating_cycle_active", "stiebel_heating_cycle_active 1"},
+		{"heating cycle with other bit", stiebel.Heizmodul, 0x0061, 768, "stiebel_heating_cycle_active", "stiebel_heating_cycle_active 1"},
+		{"no heating cycle", stiebel.Heizmodul, 0x0061, 256, "stiebel_heating_cycle_active", "stiebel_heating_cycle_active 0"},
 		{"high pressure", stiebel.Heizmodul, 0x07A6, 1861, "stiebel_heater_high_pressure_bar", "stiebel_heater_high_pressure_bar 18.61"},
 		{"low pressure", stiebel.Heizmodul, 0x07A7, 697, "stiebel_heater_low_pressure_bar", "stiebel_heater_low_pressure_bar 6.97"},
 		{"hot water charging", stiebel.Kessel, 0x01D2, 0x0251, "stiebel_hot_water_charging", "stiebel_hot_water_charging 1"},    // little endian: 0x5102
@@ -219,7 +223,7 @@ func TestPoll(t *testing.T) {
 	for i := uint16(0x0922); i <= 0x0929; i++ {
 		want = append(want, request{stiebel.Heizmodul, i})
 	}
-	for _, i := range []uint16{0x063E, 0x063F, 0x0265, 0x0822, 0x0823, 0x0833, 0x0061, 0x07A6, 0x07A7, 0x0806, 0x0807} {
+	for _, i := range []uint16{0x063D, 0x07A8, 0x0265, 0x0822, 0x0823, 0x0833, 0x0061, 0x07A6, 0x07A7, 0x0806, 0x0807} {
 		want = append(want, request{stiebel.Heizmodul, i})
 	}
 

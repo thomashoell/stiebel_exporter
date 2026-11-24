@@ -139,7 +139,7 @@ with different scales – what 0x063F is stays **open**. More cycles are needed 
   metrics.
 - 0x0640 stayed constant (heater 34, boiler/manager 16).
 
-**Consequences:**
+**Consequences** (implemented in the PR "feat!: compressor metrics from verified registers"):
 
 - export 0x063D as `stiebel_compressor_modulation_percent` and drop `stiebel_compressor_speed_rpm` (0x063E is
   always 0, 0x063F is not a speed);

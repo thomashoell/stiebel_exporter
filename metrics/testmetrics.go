@@ -11,21 +11,13 @@ import (
 // Elster type (and therefore the scaling) from the can_progs table is right. They are exported as
 // test_stiebel_register_value so they can be compared with the heat pump's display before they get proper metrics.
 //
-// Current round: what does the compressor do? ISTDREHZAHL_VERDICHTER_2 (0x063F, heater) is not the compressor
-// speed on this device – it rises while the compressor stands still (hot gas cooling down) and goes negative while
-// it runs – so these candidates are compared with the hot gas temperature to find a register that shows whether
-// (and how fast) the compressor runs.
+// Evaluated 2026-11-24 (docs/heat-pump-registers.md): 0x063D and 0x07A8 became regular metrics; 0x0062, 0x0068,
+// 0x0070 don't answer, 0x063C and 0x0640 carry no information. Still open: what 0x063F and 0x033D (rising while
+// the compressor stands still) and the single bits of 0x0176 mean.
 var testIndexes = []uint16{
-	0x0062, // WAERMEPUMPEN_STATUS (bit field, little endian)
-	0x0068, // BETRIEBSART
-	0x0070, // DREHZAHLREG_JA_NEIN
-	0x0176, // BETRIEBS_STATUS
-	0x033D, // INTEGRAL_REGELABWEICHUNG (heating integral? 0x063F behaves like one)
-	0x063C, // SOLLDREHZAHL_VERDICHTER_1 (always 0 on the heater, asked from boiler and manager too)
-	0x063D, // SOLLDREHZAHL_VERDICHTER_2
-	0x063F, // ISTDREHZAHL_VERDICHTER_2 (exported for the heater already, compare with boiler and manager)
-	0x0640, // ZWISCHENEINSPRITZUNG_ISTTEMP_VND
-	0x07A8, // VERDICHTER (dec)
+	0x0176, // BETRIEBS_STATUS (bit field, 65 during a heating cycle)
+	0x033D, // INTEGRAL_REGELABWEICHUNG
+	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.

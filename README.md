@@ -19,7 +19,8 @@ disable the old `wlp_exporter` service before enabling `stiebel_exporter`.
 | `stiebel_boiler_tank_temperature_celsius` | | `SPEICHERISTTEMP` (0x000E) |
 | `stiebel_outdoor_temperature_celsius` | | `AUSSENTEMP` (0x000C) |
 | `stiebel_heater_hot_gas_temperature_celsius` | | `HEISSGAS_TEMP` (0x0265) |
-| `stiebel_compressor_speed_rpm` | `unit` | `ISTDREHZAHL_VERDICHTER_1/2` (0x063E/0x063F); **not the actual speed** on a WPM, see [docs/heat-pump-registers.md](docs/heat-pump-registers.md) |
+| `stiebel_compressor_modulation_percent` | | `SOLLDREHZAHL_VERDICHTER_2` (0x063D): 0 while standing still or defrosting, otherwise ~28–100 |
+| `stiebel_compressor_running` | | bit 0x10 of `VERDICHTER` (0x07A8); 0 during defrosts |
 | `stiebel_heating_flow_setpoint_celsius` | | `KESSELSOLLTEMP` (0x0002) |
 | `stiebel_boiler_tank_setpoint_celsius` | | `SPEICHERSOLLTEMP` (0x0003) |
 | `stiebel_room_comfort_setpoint_celsius` | | `RAUMSOLLTEMP_I` (0x0005) |
@@ -28,12 +29,16 @@ disable the old `wlp_exporter` service before enabling `stiebel_exporter`.
 | `stiebel_heater_return_temperature_celsius` | | `RUECKLAUFISTTEMP_WP_IWS` (0x0823) |
 | `stiebel_heater_fan_speed_percent` | | `LUEFTERDREHZAHL` (0x0833) |
 | `stiebel_heater_high_pressure_bar`, `stiebel_heater_low_pressure_bar` | | `ANZEIGE_HOCHDRUCK`/`ANZEIGE_NIEDERDRUCK` (0x07A6/0x07A7) |
-| `stiebel_heater_defrost_phase` | | bit 0x0200 of `ABTAUUNGAKTIV` (0x0061); on a WPM it is set while the compressor runs, see [docs/heat-pump-registers.md](docs/heat-pump-registers.md) |
+| `stiebel_heating_cycle_active` | | bit 0x0200 of `ABTAUUNGAKTIV` (0x0061): compressor start to stop, including the defrosts in between |
+| `stiebel_heater_defrost_active` | | bit 0x100 of `VERDICHTER` (0x07A8) |
 | `stiebel_hot_water_charging` | | bit 0x4000 of `PUMPENSTATUS` (0x01D2) |
 | `stiebel_heater_defrosts` | | `STARTS_ABTAUUNG` (0x0806), counted by the heat pump |
 | `stiebel_heater_last_defrost_duration_seconds` | | `ZEITDAUER_LETZTE_ABTAUUNG` (0x0807), unit assumed |
 | `stiebel_electrical_power_consumption_watt_hours` | `time_frame`, `magnitude`, `component` | `EL_AUFNAHMELEISTUNG_*` (0x091A–0x0921) |
 | `stiebel_heat_produced_watt_hours` | `time_frame`, `magnitude`, `component`, `heat_generator` | `WAERMEERTRAG_*` (0x0922–0x0931) |
+
+What the registers mean on the real device (and why `ISTDREHZAHL_VERDICHTER_*` is not exported) is documented in
+[docs/heat-pump-registers.md](docs/heat-pump-registers.md).
 
 The heat pump reports energy in parts (Wh and kWh of the day, kWh and MWh of the total). Each part is
 exported in Wh with its `magnitude` (`WH`, `kWH`, `MWH`); the value of a `time_frame` is the sum of its parts.

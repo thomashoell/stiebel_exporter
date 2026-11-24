@@ -13,17 +13,15 @@ const (
 	namespace = "stiebel"
 
 	// label values
-	day         = "day"
-	total       = "total"
-	wh          = "WH"
-	kwh         = "kWH"
-	mwh         = "MWH"
-	water       = "water"
-	heat        = "heat"
-	we1         = "1"
-	we2         = "2"
-	compressor1 = "1"
-	compressor2 = "2"
+	day   = "day"
+	total = "total"
+	wh    = "WH"
+	kwh   = "kWH"
+	mwh   = "MWH"
+	water = "water"
+	heat  = "heat"
+	we1   = "1"
+	we2   = "2"
 )
 
 // gauges holds the metrics with values read from the heat pump.
@@ -35,7 +33,8 @@ type gauges struct {
 	hotGasTemperature       prometheus.Gauge
 	electricalPowerConsumed *prometheus.GaugeVec
 	heatProduced            *prometheus.GaugeVec
-	compressorSpeedRpm      *prometheus.GaugeVec
+	compressorModulation    prometheus.Gauge
+	compressorRunning       prometheus.Gauge
 
 	heatingFlowSetpoint     prometheus.Gauge
 	tankSetpoint            prometheus.Gauge
@@ -44,7 +43,8 @@ type gauges struct {
 	heaterFlowTemperature   prometheus.Gauge
 	heaterReturnTemperature prometheus.Gauge
 	fanSpeed                prometheus.Gauge
-	defrostPhase            prometheus.Gauge
+	heatingCycleActive      prometheus.Gauge
+	defrostActive           prometheus.Gauge
 	highPressure            prometheus.Gauge
 	lowPressure             prometheus.Gauge
 	hotWaterCharging        prometheus.Gauge
@@ -93,11 +93,17 @@ func newGauges() *gauges {
 			Name:      "heat_produced_watt_hours",
 			Help:      "The total amount of heat generated.",
 		}, []string{"time_frame", "magnitude", "component", "heat_generator"}),
-		compressorSpeedRpm: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		compressorModulation: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
-			Name:      "compressor_speed_rpm",
-			Help:      "The compressor's revolutions per minute.",
-		}, []string{"unit"}),
+			Name:      "compressor_modulation_percent",
+			Help: "Modulation of the inverter compressor in percent (SOLLDREHZAHL_VERDICHTER_2): 0 while it stands " +
+				"still or defrosts, otherwise from the lowest stage (~28) to 100.",
+		}),
+		compressorRunning: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "compressor_running",
+			Help:      "1 while the compressor runs (bit 0x10 of VERDICHTER), 0 otherwise, also during defrosts.",
+		}),
 
 		heatingFlowSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -138,12 +144,17 @@ func newGauges() *gauges {
 			Name:      "fan_speed_percent",
 			Help:      "Speed of the evaporator fan in percent (LUEFTERDREHZAHL).",
 		}),
-		defrostPhase: prometheus.NewGauge(prometheus.GaugeOpts{
+		heatingCycleActive: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "heating_cycle_active",
+			Help: "1 from the start of the compressor to its stop, including the defrosts in between (bit 0x0200 " +
+				"of ABTAUUNGAKTIV), 0 while the compressor stands still.",
+		}),
+		defrostActive: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Subsystem: "heater",
-			Name:      "defrost_phase",
-			Help: "1 during a defrost phase (bit 0x0200 of ABTAUUNGAKTIV), 0 otherwise. A phase lasts from minutes " +
-				"to hours and usually contains one defrost, see stiebel_heater_defrosts.",
+			Name:      "defrost_active",
+			Help:      "1 while the evaporator is defrosted (bit 0x100 of VERDICHTER), 0 otherwise.",
 		}),
 		highPressure: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -186,7 +197,8 @@ func (g *gauges) collectors() []prometheus.Collector {
 		g.hotGasTemperature,
 		g.electricalPowerConsumed,
 		g.heatProduced,
-		g.compressorSpeedRpm,
+		g.compressorModulation,
+		g.compressorRunning,
 		g.heatingFlowSetpoint,
 		g.tankSetpoint,
 		g.roomComfortSetpoint,
@@ -194,7 +206,8 @@ func (g *gauges) collectors() []prometheus.Collector {
 		g.heaterFlowTemperature,
 		g.heaterReturnTemperature,
 		g.fanSpeed,
-		g.defrostPhase,
+		g.heatingCycleActive,
+		g.defrostActive,
 		g.highPressure,
 		g.lowPressure,
 		g.hotWaterCharging,
@@ -279,19 +292,22 @@ func newUnits(g *gauges) []*unit {
 	heater := newUnit("heater", stiebel.Heizmodul)
 	heater.add(true, energyIndexes(0x0922, g.heatProduced, we2)...) // WAERMEERTRAG_2WE_* (booster heater)
 	heater.add(true,
-		indexSetter{0x063E, set(g.compressorSpeedRpm.WithLabelValues(compressor1))}, // ISTDREHZAHL_VERDICHTER_1
-		indexSetter{0x063F, set(g.compressorSpeedRpm.WithLabelValues(compressor2))}, // ISTDREHZAHL_VERDICHTER_2
-		indexSetter{0x0265, set(g.hotGasTemperature)},                               // HEISSGAS_TEMP
+		// SOLLDREHZAHL_VERDICHTER_2; ISTDREHZAHL_VERDICHTER_1/2 (0x063E/0x063F) are not the compressor speed on a
+		// WPM, see docs/heat-pump-registers.md
+		indexSetter{0x063D, set(g.compressorModulation)},
+		// VERDICHTER, bit field: 0x10 = compressor running, 0x100 = defrost
+		indexSetter{0x07A8, setAll(setBit(g.compressorRunning, 0x0010), setBit(g.defrostActive, 0x0100))},
+		indexSetter{0x0265, set(g.hotGasTemperature)}, // HEISSGAS_TEMP
 	)
 	heater.add(true,
-		indexSetter{0x0822, set(g.heaterFlowTemperature)},   // VORLAUFISTTEMP_WP_IWS
-		indexSetter{0x0823, set(g.heaterReturnTemperature)}, // RUECKLAUFISTTEMP_WP_IWS
-		indexSetter{0x0833, set(g.fanSpeed)},                // LUEFTERDREHZAHL
-		indexSetter{0x0061, setBit(g.defrostPhase, 0x0200)}, // ABTAUUNGAKTIV
-		indexSetter{0x07A6, setDivided(g.highPressure, 10)}, // ANZEIGE_HOCHDRUCK, decoded value is bar * 10
-		indexSetter{0x07A7, setDivided(g.lowPressure, 10)},  // ANZEIGE_NIEDERDRUCK, decoded value is bar * 10
-		indexSetter{0x0806, set(g.defrosts)},                // STARTS_ABTAUUNG
-		indexSetter{0x0807, set(g.lastDefrostDuration)},     // ZEITDAUER_LETZTE_ABTAUUNG
+		indexSetter{0x0822, set(g.heaterFlowTemperature)},         // VORLAUFISTTEMP_WP_IWS
+		indexSetter{0x0823, set(g.heaterReturnTemperature)},       // RUECKLAUFISTTEMP_WP_IWS
+		indexSetter{0x0833, set(g.fanSpeed)},                      // LUEFTERDREHZAHL
+		indexSetter{0x0061, setBit(g.heatingCycleActive, 0x0200)}, // ABTAUUNGAKTIV
+		indexSetter{0x07A6, setDivided(g.highPressure, 10)},       // ANZEIGE_HOCHDRUCK, decoded value is bar * 10
+		indexSetter{0x07A7, setDivided(g.lowPressure, 10)},        // ANZEIGE_NIEDERDRUCK, decoded value is bar * 10
+		indexSetter{0x0806, set(g.defrosts)},                      // STARTS_ABTAUUNG
+		indexSetter{0x0807, set(g.lastDefrostDuration)},           // ZEITDAUER_LETZTE_ABTAUUNG
 	)
 
 	// the manager is not polled, its responses are only logged
@@ -307,6 +323,15 @@ func setBit(g prometheus.Gauge, mask uint16) setter {
 			g.Set(1)
 		} else {
 			g.Set(0)
+		}
+	}
+}
+
+// setAll passes the value to all setters, for registers with several metrics (bit fields).
+func setAll(setters ...setter) setter {
+	return func(v float64) {
+		for _, s := range setters {
+			s(v)
 		}
 	}
 }
