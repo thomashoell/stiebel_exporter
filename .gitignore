@@ -1,5 +1,4 @@
 .idea/
 /stiebel_exporter
 /dist/
-/node_modules/
 *.out
