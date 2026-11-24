@@ -22,8 +22,9 @@ builds:
       - "7"
     flags:
       - -trimpath
+    # .Version = the tag for releases (tagFormat "${version}"), the snapshot version for CI builds
     ldflags:
-      - -s -w -X main.gitCommit={{ .ShortCommit }} -X main.gitTag={{ .Tag }}
+      - -s -w -X main.gitCommit={{ .ShortCommit }} -X main.gitTag={{ .Version }}
     # reproducible builds
     mod_timestamp: "{{ .CommitTimestamp }}"
 
@@ -66,5 +67,7 @@ release:
     name: stiebel_exporter
   mode: keep-existing
 
+# PR/CI builds (ci.yml): next patch version with the short commit hash as suffix, e.g. 1.4.2-snapshot.3d3cbe2.
+# No "+" (SemVer build metadata) because the version ends up in archive and artifact names.
 snapshot:
-  version_template: "{{ incpatch .Version }}-snapshot+{{ .ShortCommit }}"
+  version_template: "{{ incpatch .Version }}-snapshot.{{ .ShortCommit }}"
