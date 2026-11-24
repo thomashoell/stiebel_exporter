@@ -58,6 +58,8 @@ The test values are polled once per `-test-interval` (each request takes ~50 ms 
 What the registers mean on a real device, and the current investigations, are documented in
 [docs/heat-pump-registers.md](docs/heat-pump-registers.md).
 
+Planned features (web UI, writing set points, PV surplus integration): [docs/roadmap.md](docs/roadmap.md).
+
 ## Usage
 
 ```
