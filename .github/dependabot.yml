@@ -33,6 +33,10 @@ updates:
       github-actions:
         patterns:
           - "*"
+    ignore:
+      # the amd64 image of v2.6.0 is missing on ghcr.io (2026-11-24), remove once a fixed release exists
+      - dependency-name: ossf/scorecard-action
+        versions: ["2.6.0"]
 
   # hook versions in .pre-commit-config.yaml; the CI lint job uses the same golangci-lint/actionlint versions
   - package-ecosystem: pre-commit
