@@ -1814,7 +1814,7 @@ var readings = []ElsterReading{
 	{"MESSSTROM_NIEDERDRUCK", 0x07a5, TypeNone},
 	{"ANZEIGE_HOCHDRUCK", 0x07a6, TypeDecVal},
 	{"ANZEIGE_NIEDERDRUCK", 0x07a7, TypeDecVal},
-	{"VERDICHTER", 0x07a8, TypeDecVal},
+	{"VERDICHTER", 0x07a8, TypeNone}, // bit field on a WPM (can_progs: dec), see docs/heat-pump-registers.md
 	{"VERDAMPFERISTTEMP_KOMPENSIERT", 0x07a9, TypeNone},
 	{"TAU_PENDEL_ERKENNUNGSZEIT", 0x07aa, TypeNone},
 	{"VERZOEGERUNG_PENDELERKENNUNG", 0x07ab, TypeNone},
