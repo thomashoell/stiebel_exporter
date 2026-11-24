@@ -267,6 +267,8 @@ jobs:
           echo "--- CAN frames"; head -n 50 candump.log
           exit "${status:-0}"
 
+  # builds the release archives as a snapshot on every run; on PRs they are uploaded as a workflow artifact so a
+  # change can be tested on the real heat pump (daedalus) before it is merged
   release-check:
     name: GoReleaser (snapshot)
     runs-on: ubuntu-latest
@@ -275,17 +277,52 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
+          # PRs: build the head commit instead of the merge commit, so the version suffix (short commit hash)
+          # matches a commit of the branch
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
         with:
           go-version-file: go.mod
 
-      - name: Check config and build all release binaries
+      # snapshot: nothing is published; cosign and syft only run for real releases (release.yml)
+      - name: Check config and build all release archives
         uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
           distribution: goreleaser
           version: ${{ env.GORELEASER_VERSION }}
-          args: build --snapshot --clean
+          args: release --snapshot --clean --skip=sign,sbom
+
+      - name: Read snapshot version
+        id: snapshot
+        run: echo "version=$(jq -r .version dist/metadata.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload archives
+        id: upload
+        if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stiebel_exporter_${{ steps.snapshot.outputs.version }}
+          path: |
+            dist/*.tar.gz
+            dist/checksums.txt
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Summary
+        if: steps.upload.outcome == 'success'
+        env:
+          VERSION: ${{ steps.snapshot.outputs.version }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+        run: |
+          {
+            echo "### Snapshot binaries ${VERSION}"
+            echo
+            echo "[Download](${ARTIFACT_URL}) (14 days) or:"
+            echo '```sh'
+            echo "gh run download ${GITHUB_RUN_ID} -R ${GITHUB_REPOSITORY} -n stiebel_exporter_${VERSION}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   govulncheck:
     name: govulncheck
