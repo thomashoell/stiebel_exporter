@@ -101,6 +101,17 @@ sudo install -m 0644 stiebel_exporter.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now stiebel_exporter
 ```
 
+## Grafana dashboard
+
+[`dashboards/stiebel-heat-pump.json`](dashboards/stiebel-heat-pump.json) is a ready-made dashboard (labels in
+German) for the metrics of this exporter: outdoor and hot water temperature, compressor, operating mode, defrosts,
+energy consumption, produced heat, coefficient of performance, heating circuit and refrigerant circuit.
+
+Import it in Grafana under *Dashboards → New → Import* (upload the file or paste its content) and pick your
+Prometheus data source in the *Datenquelle* variable at the top. With provisioning (file provider, Kubernetes
+sidecar), use the file as it is – the data source is a dashboard variable, there are no import inputs. It was
+exported from a current Grafana (dashboard schema version 41); older versions may not render every option.
+
 ## Development
 
 Requires Go 1.26 or later. CI runs [golangci-lint](https://golangci-lint.run) (including `gofmt`/`goimports`)
