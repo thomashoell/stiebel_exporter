@@ -21,6 +21,26 @@ Use case: heat the hot water tank when there is enough PV surplus, so it doesn't
 - Writing is not supported yet; the protocol pieces exist (`stiebel.EncodeValue`, `EncodeReceiver`), a write
   telegram to the boiler/WPM (`0x180`) is missing.
 - Candidates: `SPEICHERSOLLTEMP` (0x0003) to trigger hot water charging; possibly `PROGRAMMSCHALTER` (0x0112).
+- A CAN write changes the same parameter as the control panel (ComfortSoft and the ISG use the same path), but it
+  is not necessarily equivalent to a change on the panel:
+  - The panel only accepts values within the allowed range; whether the WPM rejects invalid values written via CAN
+    is unknown.
+  - Some menu items on the panel change several parameters at once or trigger an action; writing a single index
+    may not.
+  - The panel, the WPM's time programs and the exporter all write the same value – the last write wins, so the
+    exporter can't assume its value stays set.
+- Guard rails: the allowed range (and step) of every writable set point is read off the control panel and
+  hard-coded in the exporter, which rejects anything outside it – no reliance on the WPM's validation.
+
+  | Index | Name | Panel menu | Min | Max | Step |
+  |---|---|---|---|---|---|
+  | 0x0003 | SPEICHERSOLLTEMP | **open** | **open** | **open** | **open** |
+
+- Verification before writing is implemented:
+  1. Change the hot water set point on the panel by 1 K and check that `stiebel_boiler_tank_setpoint_celsius`
+     follows (possible today).
+  2. With write support: write the same value via CAN within the allowed range, check that the panel shows it
+     and that it survives a restart of the WPM.
 - Open questions:
   - Which values does the WPM persist (EEPROM), and how often may they be written? Never write in a fast loop.
   - Safe fallback: a temporary set point must be restored even if the exporter crashes or loses the CAN bus
