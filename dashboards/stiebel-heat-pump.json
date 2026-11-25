@@ -222,7 +222,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "stiebel_boiler_tank_setpoint_celsius",
+          "expr": "(stiebel_boiler_tank_eco_setpoint_celsius and on () stiebel_operating_mode{mode=\"Eco-Betrieb\"}) or stiebel_boiler_tank_comfort_setpoint_celsius",
           "format": "time_series",
           "instant": true,
           "legendFormat": "Speicher-Soll",
@@ -251,7 +251,7 @@
           }
         }
       ],
-      "description": "Temperatur im Warmwasserspeicher. Farbverlauf blau (20 °C) → rot (60 °C); Markierung und Beschriftung = Soll-Wert (SPEICHERSOLLTEMP)."
+      "description": "Temperatur im Warmwasserspeicher. Markierung und Beschriftung = wirksamer Soll-Wert (Eco-Soll im Eco-Betrieb, sonst Komfort-Soll); blau unter, grün ab dem Soll-Wert."
     },
     {
       "datasource": {
@@ -1543,7 +1543,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "avg_over_time(stiebel_boiler_tank_setpoint_celsius[$__interval])",
+          "expr": "(stiebel_boiler_tank_eco_setpoint_celsius and on () stiebel_operating_mode{mode=\"Eco-Betrieb\"}) or stiebel_boiler_tank_comfort_setpoint_celsius",
           "legendFormat": "Speicher-Soll",
           "refId": "F",
           "range": true
@@ -1551,7 +1551,7 @@
       ],
       "title": "Warmwasser",
       "type": "timeseries",
-      "description": "Temperatur im Warmwasserspeicher und Soll-Wert (gestrichelt)."
+      "description": "Temperatur im Warmwasserspeicher und wirksamer Soll-Wert (gestrichelt): Eco-Soll im Eco-Betrieb, sonst Komfort-Soll."
     },
     {
       "datasource": {

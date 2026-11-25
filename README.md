@@ -22,7 +22,9 @@ disable the old `wlp_exporter` service before enabling `stiebel_exporter`.
 | `stiebel_compressor_modulation_percent` | | `SOLLDREHZAHL_VERDICHTER_2` (0x063D): 0 while standing still or defrosting, otherwise ~28–100 |
 | `stiebel_compressor_running` | | bit 0x10 of `VERDICHTER` (0x07A8); 0 during defrosts |
 | `stiebel_heating_flow_setpoint_celsius` | | `KESSELSOLLTEMP` (0x0002) |
-| `stiebel_boiler_tank_setpoint_celsius` | | `SPEICHERSOLLTEMP` (0x0003) |
+| `stiebel_boiler_tank_setpoint_celsius` | | `SPEICHERSOLLTEMP` (0x0003); not the effective set point, keeps the Komfort value in Eco-Betrieb |
+| `stiebel_boiler_tank_comfort_setpoint_celsius` | | `EINSTELL_SPEICHERSOLLTEMP` (0x0013): hot water set point of Komfortbetrieb |
+| `stiebel_boiler_tank_eco_setpoint_celsius` | | `EINSTELL_SPEICHERSOLLTEMP2` (0x0A06): hot water set point of Eco-Betrieb |
 | `stiebel_room_comfort_setpoint_celsius` | | `RAUMSOLLTEMP_I` (0x0005) |
 | `stiebel_operating_mode` | `mode` | `PROGRAMMSCHALTER` (0x0112); value = raw code, e.g. 768 = `Komfortbetrieb` |
 | `stiebel_heater_flow_temperature_celsius` | | `VORLAUFISTTEMP_WP_IWS` (0x0822) |

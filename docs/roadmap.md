@@ -42,7 +42,7 @@ Use case: heat the hot water tank when there is enough PV surplus, so it doesn't
   point. Which register holds which set point is being checked with test polls.
 
 - Verification before writing is implemented:
-  1. Change the hot water set point on the panel by 1 K and check that `stiebel_boiler_tank_setpoint_celsius`
+  1. Change the hot water set point on the panel by 1 K and check that `stiebel_boiler_tank_comfort_setpoint_celsius` (or `…_eco_…`)
      follows (possible today).
   2. With write support: write the same value via CAN within the allowed range, check that the panel shows it
      and that it survives a restart of the WPM.

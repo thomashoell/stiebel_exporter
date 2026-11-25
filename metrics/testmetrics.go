@@ -15,14 +15,12 @@ import (
 // 0x0070 don't answer, 0x063C and 0x0640 carry no information. Still open: what 0x063F and 0x033D (rising while
 // the compressor stands still) and the single bits of 0x0176 mean.
 //
-// 2026-11-25: which registers hold the hot water set points of Komfortbetrieb and Eco-Betrieb (+10 … +60 °C on the
-// panel)? Compare with the values set on the panel; SPEICHERSOLLTEMP (0x0003) is the effective one.
+// 2026-11-25: the hot water set points of Komfort and Eco are 0x0013 and 0x0A06 (now regular metrics); 0x013E, 0x0133
+// and 0x0118 don't answer. WW_ECO is still open (false in Eco-Betrieb).
 var testIndexes = []uint16{
-	0x0013, // EINSTELL_SPEICHERSOLLTEMP
-	0x0A06, // EINSTELL_SPEICHERSOLLTEMP2
-	0x013E, // EINSTELL_SPEICHERSOLLTEMP3
-	0x0133, // WW_SOLLWERT_REDUZIERT
-	0x0118, // ECO_BETRIEB
+	0x0176, // BETRIEBS_STATUS (bit field, 65 during a heating cycle)
+	0x033D, // INTEGRAL_REGELABWEICHUNG
+	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)
 	0x027E, // WW_ECO
 	0x0176, // BETRIEBS_STATUS (bit field, 65 during a heating cycle)
 	0x033D, // INTEGRAL_REGELABWEICHUNG
