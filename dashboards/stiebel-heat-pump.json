@@ -45,7 +45,7 @@
           "type": "prometheus",
           "uid": "${datasource}"
         },
-        "enable": true,
+        "enable": false,
         "expr": "stiebel_heater_defrost_active == 1",
         "hide": false,
         "iconColor": "blue",
@@ -872,7 +872,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "red"
+            "fixedColor": "text"
           },
           "mappings": [],
           "thresholds": {
@@ -897,7 +897,7 @@
       },
       "id": 30,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
@@ -910,7 +910,10 @@
         },
         "showPercentChange": false,
         "textMode": "value",
-        "wideLayout": true
+        "wideLayout": true,
+        "text": {
+          "valueSize": 36
+        }
       },
       "pluginVersion": "12.1.0",
       "targets": [
@@ -942,7 +945,7 @@
         "defaults": {
           "color": {
             "mode": "fixed",
-            "fixedColor": "red"
+            "fixedColor": "text"
           },
           "mappings": [],
           "thresholds": {
@@ -967,7 +970,7 @@
       },
       "id": 31,
       "options": {
-        "colorMode": "value",
+        "colorMode": "none",
         "graphMode": "none",
         "justifyMode": "center",
         "orientation": "auto",
@@ -980,7 +983,10 @@
         },
         "showPercentChange": false,
         "textMode": "value",
-        "wideLayout": true
+        "wideLayout": true,
+        "text": {
+          "valueSize": 36
+        }
       },
       "pluginVersion": "12.1.0",
       "targets": [
@@ -1062,8 +1068,7 @@
               }
             ]
           },
-          "unit": "watth",
-          "decimals": 1
+          "unit": "watth"
         },
         "overrides": [
           {
@@ -1211,8 +1216,7 @@
               }
             ]
           },
-          "unit": "watth",
-          "decimals": 1
+          "unit": "watth"
         },
         "overrides": [
           {
@@ -1394,6 +1398,28 @@
           },
           {
             "matcher": {
+              "id": "byRegexp",
+              "options": "WP-.*"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dot",
+                  "dash": [
+                    0,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              }
+            ]
+          },
+          {
+            "matcher": {
               "id": "byName",
               "options": "Vorlauf"
             },
@@ -1551,7 +1577,7 @@
       ],
       "title": "Heizkreis",
       "type": "timeseries",
-      "description": "Vorlauf/Rücklauf am Kessel und in der Wärmepumpe (WP-), Vorlauf-Soll aus der Heizkurve (gestrichelt)."
+      "description": "Vorlauf/Rücklauf am Kessel (durchgezogen) und in der Wärmepumpe (WP-, gepunktet), Vorlauf-Soll aus der Heizkurve (gestrichelt)."
     },
     {
       "datasource": {
