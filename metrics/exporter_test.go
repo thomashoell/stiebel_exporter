@@ -419,13 +419,13 @@ func TestTestIndexesAreKnown(t *testing.T) {
 func TestOperatingModeKeepsOnlyCurrentMode(t *testing.T) {
 	e, reg := newTestExporter(t, &fakeBus{})
 	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0300)) // Komfortbetrieb
-	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0200)) // Automatik
+	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0200)) // Programmbetrieb
 
 	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "stiebel_operating_mode")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(got), `stiebel_operating_mode{mode="Automatik"} 512`) || strings.Contains(string(got), "Komfortbetrieb") {
+	if !strings.Contains(string(got), `stiebel_operating_mode{mode="Programmbetrieb"} 512`) || strings.Contains(string(got), "Komfortbetrieb") {
 		t.Errorf("unexpected operating mode series:\n%s", got)
 	}
 }
