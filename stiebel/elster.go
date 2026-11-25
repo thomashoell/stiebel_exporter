@@ -167,6 +167,11 @@ func DecodeFloat(b []byte, t ElsterType) (float64, error) {
 		return v, nil
 	case byte:
 		return float64(v), nil
+	case bool:
+		if v {
+			return 1, nil
+		}
+		return 0, nil
 	default:
 		return 0, fmt.Errorf("value of type %T is not numeric", val)
 	}

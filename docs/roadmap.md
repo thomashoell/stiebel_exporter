@@ -34,8 +34,8 @@ Use case: heat the hot water tank when there is enough PV surplus, so it doesn't
 
   | Set point | Register | Panel menu | Min | Max | Step |
   |---|---|---|---|---|---|
-  | hot water, Komfortbetrieb | **open** (candidates 0x0013, 0x0A06, 0x013E) | **open** | +10 °C | +60 °C | 0.1 K |
-  | hot water, Eco-Betrieb | **open** (candidates 0x0013, 0x0A06, 0x013E) | **open** | +10 °C | +60 °C | 0.1 K |
+  | hot water, Komfortbetrieb | 0x0013 EINSTELL_SPEICHERSOLLTEMP | **open** | +10 °C | +60 °C | 0.1 K |
+  | hot water, Eco-Betrieb | 0x0A06 EINSTELL_SPEICHERSOLLTEMP2 | **open** | +10 °C | +60 °C | 0.1 K |
 
   The panel has separate hot water set points for Komfortbetrieb and Eco-Betrieb (2026-11-25). SPEICHERSOLLTEMP
   (0x0003) did not follow the Eco set point (47 °C) in Eco-Betrieb and stayed at 48 °C – probably the Komfort set

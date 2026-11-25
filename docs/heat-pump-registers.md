@@ -20,6 +20,8 @@ noted) so the history stays traceable.
 |---|---|---|---|
 | 0x0002 | KESSELSOLLTEMP | boiler | heating flow set point (heating curve), °C (dec) |
 | 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C – **not** the effective one: in Eco-Betrieb with an Eco hot water set point of 47 °C it stayed at 48 °C (2026-11-25), probably the Komfort set point (to be confirmed) |
+| 0x0013 | EINSTELL_SPEICHERSOLLTEMP | boiler, manager | hot water set point of **Komfortbetrieb**, °C (dec); 48 °C as set on the panel (2026-11-25) |
+| 0x0A06 | EINSTELL_SPEICHERSOLLTEMP2 | boiler, manager | hot water set point of **Eco-Betrieb**, °C (dec); 47 °C as set on the panel (2026-11-25) |
 | 0x0005 | RAUMSOLLTEMP_I | boiler | room comfort set point, °C |
 | 0x000C | AUSSENTEMP | boiler | outdoor temperature, °C |
 | 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code: 0x0300 = 768 = **Komfortbetrieb** (verified on the WPM display, can_progs calls it Tagbetrieb); 0x0400 = 1024 = **Eco-Betrieb** (verified 2026-11-25, can_progs: Absenkbetrieb; the heating flow set point dropped from 35 to 32.1 °C, the hot water set point 0x0003 stayed at 48 °C) |
@@ -50,6 +52,8 @@ noted) so the history stays traceable.
 - 0x01DA VOLUMENSTROM, 0x0059 HEIZKREIS_STATUS, 0x005A SPEICHER_STATUS (2 boiler / 129 heater), 0x01C4
   LAUFZEIT_WP1, 0xFDB8 WAERMEMENGE – constant.
 - 0x0004 VORLAUFSOLLTEMP (5), 0x000F VORLAUFISTTEMP (−400 = sensor missing) – unused circuit.
+- No answer to the hot water set point candidates 0x013E EINSTELL_SPEICHERSOLLTEMP3, 0x0133 WW_SOLLWERT_REDUZIERT,
+  0x0118 ECO_BETRIEB (2026-11-25).
 - No unit answered: room, evaporator, condenser, source temperatures, water pressure, compressor run times
   (0x000D, 0x0011, 0x0014, 0x01D4, 0x0264, 0x034F, 0x001F, 0x05A5–0x05A9).
 
