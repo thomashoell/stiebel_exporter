@@ -843,19 +843,6 @@
       "description": "Dauer der letzten Abtauung (ZEITDAUER_LETZTE_ABTAUUNG); Einheit Sekunden angenommen."
     },
     {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 14
-      },
-      "id": 9,
-      "panels": [],
-      "title": "Wärme und Temperaturen",
-      "type": "row"
-    },
-    {
       "datasource": {
         "type": "prometheus",
         "uid": "${datasource}"
@@ -885,7 +872,7 @@
         "h": 4,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 14
       },
       "id": 30,
       "options": {
@@ -955,7 +942,7 @@
         "h": 4,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 14
       },
       "id": 31,
       "options": {
@@ -1102,7 +1089,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 19
+        "y": 18
       },
       "id": 4,
       "options": {
@@ -1251,7 +1238,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 19
+        "y": 18
       },
       "id": 5,
       "options": {
@@ -1290,6 +1277,19 @@
       "hideTimeOverride": false,
       "description": "Erzeugte Wärme pro Stunde aus dem Tageszähler der WPM (Heizen und Warmwasser gestapelt, inklusive Heizstab). Die Gesamtzähler aktualisiert die WPM nur einmal am Tag.",
       "interval": "1h"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 9,
+      "panels": [],
+      "title": "Wärme und Temperaturen",
+      "type": "row"
     },
     {
       "datasource": {
