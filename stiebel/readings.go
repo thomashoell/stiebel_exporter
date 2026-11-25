@@ -3714,14 +3714,17 @@ var errorCodes = map[uint16]string{
 	0x0021: "KEINE LEISTUNG",
 }
 
-// operatingModes maps the operating mode values (TypeOperatingMode) to their name.
+// operatingModes maps the operating mode values (TypeOperatingMode) to their name as shown on the display of the
+// heat pump manager (WPM); can_progs calls them Notbetrieb, Bereitschaft, Automatik, Tagbetrieb, Absenkbetrieb and
+// Warmwasser. The WPM offers exactly these six programs in the same order. Verified on the device: 0x0300 and
+// 0x0400, the others are assigned by that order (see docs/heat-pump-registers.md).
 var operatingModes = map[uint16]string{
 	0x0000: "Notbetrieb",
-	0x0100: "Bereitschaft",
-	0x0200: "Automatik",
-	0x0300: "Tagbetrieb",
-	0x0400: "Absenkbetrieb",
-	0x0500: "Warmwasser",
+	0x0100: "Bereitschaftsbetrieb",
+	0x0200: "Programmbetrieb",
+	0x0300: "Komfortbetrieb",
+	0x0400: "Eco-Betrieb",
+	0x0500: "Warmwasserbetrieb",
 }
 
 var readingIndex = func() map[uint16]*ElsterReading {

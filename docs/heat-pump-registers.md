@@ -19,10 +19,12 @@ noted) so the history stays traceable.
 | Index | Name | Unit | Meaning on this device |
 |---|---|---|---|
 | 0x0002 | KESSELSOLLTEMP | boiler | heating flow set point (heating curve), °C (dec) |
-| 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C |
+| 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C – **not** the effective one: in Eco-Betrieb with an Eco hot water set point of 47 °C it stayed at 48 °C (2026-11-25), probably the Komfort set point (to be confirmed) |
+| 0x0013 | EINSTELL_SPEICHERSOLLTEMP | boiler, manager | hot water set point of **Komfortbetrieb**, °C (dec); 48 °C as set on the panel (2026-11-25) |
+| 0x0A06 | EINSTELL_SPEICHERSOLLTEMP2 | boiler, manager | hot water set point of **Eco-Betrieb**, °C (dec); 47 °C as set on the panel (2026-11-25) |
 | 0x0005 | RAUMSOLLTEMP_I | boiler | room comfort set point, °C |
 | 0x000C | AUSSENTEMP | boiler | outdoor temperature, °C |
-| 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code (0x0300 = 768 = Tagbetrieb) |
+| 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code. The WPM offers six programs, can_progs lists six codes in the same order: 0x0000 Notbetrieb, 0x0100 Bereitschaftsbetrieb, 0x0200 Programmbetrieb, 0x0500 Warmwasserbetrieb (assigned by order, not verified); 0x0300 = 768 = **Komfortbetrieb** (verified on the WPM display, can_progs calls it Tagbetrieb); 0x0400 = 1024 = **Eco-Betrieb** (verified 2026-11-25, can_progs: Absenkbetrieb; the heating flow set point dropped from 35 to 32.1 °C, the hot water set point 0x0003 stayed at 48 °C) |
 | 0x01D2 | PUMPENSTATUS | boiler | bit field, **little endian**: 0x4000 = hot water charging, 0x0100 = same as bit 0x0200 of 0x0061 (see below), 0x1000 and 0x0002 always set |
 | 0x0265 | HEISSGAS_TEMP | heater | hot gas °C: ~100 °C while the compressor runs (up to 113 while charging hot water), decays exponentially towards ~50 °C when it stops – a good plausibility check for the compressor state |
 | 0x0822/0x0823 | VORLAUF/RUECKLAUFISTTEMP_WP_IWS | heater | flow/return measured in the heat pump, °C |
@@ -50,6 +52,8 @@ noted) so the history stays traceable.
 - 0x01DA VOLUMENSTROM, 0x0059 HEIZKREIS_STATUS, 0x005A SPEICHER_STATUS (2 boiler / 129 heater), 0x01C4
   LAUFZEIT_WP1, 0xFDB8 WAERMEMENGE – constant.
 - 0x0004 VORLAUFSOLLTEMP (5), 0x000F VORLAUFISTTEMP (−400 = sensor missing) – unused circuit.
+- No answer to the hot water set point candidates 0x013E EINSTELL_SPEICHERSOLLTEMP3, 0x0133 WW_SOLLWERT_REDUZIERT,
+  0x0118 ECO_BETRIEB (2026-11-25).
 - No unit answered: room, evaporator, condenser, source temperatures, water pressure, compressor run times
   (0x000D, 0x0011, 0x0014, 0x01D4, 0x0264, 0x034F, 0x001F, 0x05A5–0x05A9).
 
@@ -133,7 +137,10 @@ with different scales – what 0x063F is stays **open**. More cycles are needed 
 - **0x063D is the compressor modulation in percent** (values 0 or 28–100, maximum exactly 100).
 - **Bit 0x100 of 0x07A8 is the defrost**: set at all three defrosts, to the minute together with the defrost
   counter 0x0806.
-- **Compressor running**: bit 0x10 of 0x07A8 and 0x063D > 0 match exactly and both drop during defrosts. Bit 0x0200
+- **Compressor running**: bit 0x10 of 0x07A8 and 0x063D > 0 match exactly. A defrost starts with the compressor
+  standing still (0x108, ~1–2 min) and continues with the compressor running in reverse cycle (0x118, modulation
+  ~50–60 %) – `stiebel_compressor_running` and `stiebel_heater_defrost_active` are both 1 then (corrected
+  2026-11-25, seen at all 10 defrosts of a day). Bit 0x0200
   of 0x0061 and 0x0176 = 65 mark the whole heating cycle including its defrosts.
 - 0x063F and 0x033D have no fixed start threshold – their meaning stays **open**; they are not needed for the
   metrics.

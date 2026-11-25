@@ -169,6 +169,12 @@ func TestDecodeFloat(t *testing.T) {
 	if got, err := DecodeFloat([]byte{0x07, 0x00}, TypeByte); err != nil || got != 7 {
 		t.Errorf("got %v, %v", got, err)
 	}
+	if got, err := DecodeFloat([]byte{0x00, 0x01}, TypeBool); err != nil || got != 1 {
+		t.Errorf("got %v, %v", got, err)
+	}
+	if got, err := DecodeFloat([]byte{0x00, 0x00}, TypeLittleBool); err != nil || got != 0 {
+		t.Errorf("got %v, %v", got, err)
+	}
 	if _, err := DecodeFloat([]byte{0x1E, 0x0D}, TypeTime); err == nil {
 		t.Error("expected an error for a non-numeric type")
 	}

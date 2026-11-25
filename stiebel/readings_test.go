@@ -47,7 +47,7 @@ func TestErrorText(t *testing.T) {
 }
 
 func TestOperatingModeName(t *testing.T) {
-	if name, ok := OperatingModeName(0x0200); !ok || name != "Automatik" {
+	if name, ok := OperatingModeName(0x0200); !ok || name != "Programmbetrieb" {
 		t.Errorf("got %q, %v", name, ok)
 	}
 	if _, ok := OperatingModeName(0x0001); ok {

@@ -32,12 +32,17 @@ Use case: heat the hot water tank when there is enough PV surplus, so it doesn't
 - Guard rails: the allowed range (and step) of every writable set point is read off the control panel and
   hard-coded in the exporter, which rejects anything outside it – no reliance on the WPM's validation.
 
-  | Index | Name | Panel menu | Min | Max | Step |
+  | Set point | Register | Panel menu | Min | Max | Step |
   |---|---|---|---|---|---|
-  | 0x0003 | SPEICHERSOLLTEMP | **open** | **open** | **open** | **open** |
+  | hot water, Komfortbetrieb | 0x0013 EINSTELL_SPEICHERSOLLTEMP | **open** | +10 °C | +60 °C | 0.1 K |
+  | hot water, Eco-Betrieb | 0x0A06 EINSTELL_SPEICHERSOLLTEMP2 | **open** | +10 °C | +60 °C | 0.1 K |
+
+  The panel has separate hot water set points for Komfortbetrieb and Eco-Betrieb (2026-11-25). SPEICHERSOLLTEMP
+  (0x0003) did not follow the Eco set point (47 °C) in Eco-Betrieb and stayed at 48 °C – probably the Komfort set
+  point. Which register holds which set point is being checked with test polls.
 
 - Verification before writing is implemented:
-  1. Change the hot water set point on the panel by 1 K and check that `stiebel_boiler_tank_setpoint_celsius`
+  1. Change the hot water set point on the panel by 1 K and check that `stiebel_boiler_tank_comfort_setpoint_celsius` (or `…_eco_…`)
      follows (possible today).
   2. With write support: write the same value via CAN within the allowed range, check that the panel shows it
      and that it survives a restart of the WPM.

@@ -92,8 +92,10 @@ func TestHandleFrame(t *testing.T) {
 		{"hot gas temperature", stiebel.Heizmodul, 0x0265, 652, "stiebel_heater_hot_gas_temperature_celsius", "stiebel_heater_hot_gas_temperature_celsius 65.2"},
 		{"heating flow set point", stiebel.Kessel, 0x0002, 324, "stiebel_heating_flow_setpoint_celsius", "stiebel_heating_flow_setpoint_celsius 32.4"},
 		{"tank set point", stiebel.Kessel, 0x0003, 480, "stiebel_boiler_tank_setpoint_celsius", "stiebel_boiler_tank_setpoint_celsius 48"},
+		{"tank comfort set point", stiebel.Kessel, 0x0013, 480, "stiebel_boiler_tank_comfort_setpoint_celsius", "stiebel_boiler_tank_comfort_setpoint_celsius 48"},
+		{"tank eco set point", stiebel.Kessel, 0x0A06, 470, "stiebel_boiler_tank_eco_setpoint_celsius", "stiebel_boiler_tank_eco_setpoint_celsius 47"},
 		{"room comfort set point", stiebel.Kessel, 0x0005, 220, "stiebel_room_comfort_setpoint_celsius", "stiebel_room_comfort_setpoint_celsius 22"},
-		{"operating mode", stiebel.Kessel, 0x0112, 0x0300, "stiebel_operating_mode", `stiebel_operating_mode{mode="Tagbetrieb"} 768`},
+		{"operating mode", stiebel.Kessel, 0x0112, 0x0300, "stiebel_operating_mode", `stiebel_operating_mode{mode="Komfortbetrieb"} 768`},
 		{"unknown operating mode", stiebel.Kessel, 0x0112, 0x0900, "stiebel_operating_mode", `stiebel_operating_mode{mode="unknown"} 2304`},
 		{"heater flow temperature", stiebel.Heizmodul, 0x0822, 308, "stiebel_heater_flow_temperature_celsius", "stiebel_heater_flow_temperature_celsius 30.8"},
 		{"heater return temperature", stiebel.Heizmodul, 0x0823, 252, "stiebel_heater_return_temperature_celsius", "stiebel_heater_return_temperature_celsius 25.2"},
@@ -211,7 +213,7 @@ func TestPoll(t *testing.T) {
 
 	// the same requests as before the refactoring, in the same order
 	var want []request
-	for _, i := range []uint16{0x0016, 0x01D6, 0x000C, 0x000E, 0x0002, 0x0003, 0x0005, 0x0112, 0x01D2} {
+	for _, i := range []uint16{0x0016, 0x01D6, 0x000C, 0x000E, 0x0002, 0x0003, 0x0013, 0x0A06, 0x0005, 0x0112, 0x01D2} {
 		want = append(want, request{stiebel.Kessel, i})
 	}
 	for i := uint16(0x091A); i <= 0x0921; i++ {
@@ -418,14 +420,14 @@ func TestTestIndexesAreKnown(t *testing.T) {
 
 func TestOperatingModeKeepsOnlyCurrentMode(t *testing.T) {
 	e, reg := newTestExporter(t, &fakeBus{})
-	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0300)) // Tagbetrieb
-	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0200)) // Automatik
+	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0300)) // Komfortbetrieb
+	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0200)) // Programmbetrieb
 
 	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "stiebel_operating_mode")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(got), `stiebel_operating_mode{mode="Automatik"} 512`) || strings.Contains(string(got), "Tagbetrieb") {
+	if !strings.Contains(string(got), `stiebel_operating_mode{mode="Programmbetrieb"} 512`) || strings.Contains(string(got), "Komfortbetrieb") {
 		t.Errorf("unexpected operating mode series:\n%s", got)
 	}
 }

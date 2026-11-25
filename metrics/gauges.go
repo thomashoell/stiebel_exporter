@@ -38,6 +38,8 @@ type gauges struct {
 
 	heatingFlowSetpoint     prometheus.Gauge
 	tankSetpoint            prometheus.Gauge
+	tankComfortSetpoint     prometheus.Gauge
+	tankEcoSetpoint         prometheus.Gauge
 	roomComfortSetpoint     prometheus.Gauge
 	operatingMode           *prometheus.GaugeVec
 	heaterFlowTemperature   prometheus.Gauge
@@ -97,12 +99,12 @@ func newGauges() *gauges {
 			Namespace: namespace,
 			Name:      "compressor_modulation_percent",
 			Help: "Modulation of the inverter compressor in percent (SOLLDREHZAHL_VERDICHTER_2): 0 while it stands " +
-				"still or defrosts, otherwise from the lowest stage (~28) to 100.",
+				"still (also at the start of a defrost), otherwise from the lowest stage (~28) to 100.",
 		}),
 		compressorRunning: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "compressor_running",
-			Help:      "1 while the compressor runs (bit 0x10 of VERDICHTER), 0 otherwise, also during defrosts.",
+			Help:      "1 while the compressor runs (bit 0x10 of VERDICHTER), including the reverse-cycle part of a defrost.",
 		}),
 
 		heatingFlowSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
@@ -114,7 +116,20 @@ func newGauges() *gauges {
 			Namespace: namespace,
 			Subsystem: "boiler",
 			Name:      "tank_setpoint_celsius",
-			Help:      "Set point of the hot water tank temperature (SPEICHERSOLLTEMP).",
+			Help: "Hot water set point as reported in SPEICHERSOLLTEMP; not the effective one, it keeps the Komfort " +
+				"value in Eco-Betrieb.",
+		}),
+		tankComfortSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "boiler",
+			Name:      "tank_comfort_setpoint_celsius",
+			Help:      "Hot water set point of Komfortbetrieb (EINSTELL_SPEICHERSOLLTEMP).",
+		}),
+		tankEcoSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Subsystem: "boiler",
+			Name:      "tank_eco_setpoint_celsius",
+			Help:      "Hot water set point of Eco-Betrieb (EINSTELL_SPEICHERSOLLTEMP2).",
 		}),
 		roomComfortSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
@@ -201,6 +216,8 @@ func (g *gauges) collectors() []prometheus.Collector {
 		g.compressorRunning,
 		g.heatingFlowSetpoint,
 		g.tankSetpoint,
+		g.tankComfortSetpoint,
+		g.tankEcoSetpoint,
 		g.roomComfortSetpoint,
 		g.operatingMode,
 		g.heaterFlowTemperature,
@@ -281,6 +298,8 @@ func newUnits(g *gauges) []*unit {
 	boiler.add(true,
 		indexSetter{0x0002, set(g.heatingFlowSetpoint)},         // KESSELSOLLTEMP
 		indexSetter{0x0003, set(g.tankSetpoint)},                // SPEICHERSOLLTEMP
+		indexSetter{0x0013, set(g.tankComfortSetpoint)},         // EINSTELL_SPEICHERSOLLTEMP
+		indexSetter{0x0A06, set(g.tankEcoSetpoint)},             // EINSTELL_SPEICHERSOLLTEMP2
 		indexSetter{0x0005, set(g.roomComfortSetpoint)},         // RAUMSOLLTEMP_I
 		indexSetter{0x0112, setOperatingMode(g.operatingMode)},  // PROGRAMMSCHALTER
 		indexSetter{0x01D2, setBit(g.hotWaterCharging, 0x4000)}, // PUMPENSTATUS

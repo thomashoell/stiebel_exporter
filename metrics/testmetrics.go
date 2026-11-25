@@ -14,10 +14,14 @@ import (
 // Evaluated 2026-11-24 (docs/heat-pump-registers.md): 0x063D and 0x07A8 became regular metrics; 0x0062, 0x0068,
 // 0x0070 don't answer, 0x063C and 0x0640 carry no information. Still open: what 0x063F and 0x033D (rising while
 // the compressor stands still) and the single bits of 0x0176 mean.
+//
+// 2026-11-25: the hot water set points of Komfort and Eco are 0x0013 and 0x0A06 (now regular metrics); 0x013E, 0x0133
+// and 0x0118 don't answer. WW_ECO is still open (false in Eco-Betrieb).
 var testIndexes = []uint16{
 	0x0176, // BETRIEBS_STATUS (bit field, 65 during a heating cycle)
 	0x033D, // INTEGRAL_REGELABWEICHUNG
 	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)
+	0x027E, // WW_ECO
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
