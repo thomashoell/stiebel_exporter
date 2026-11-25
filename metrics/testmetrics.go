@@ -14,7 +14,16 @@ import (
 // Evaluated 2026-11-24 (docs/heat-pump-registers.md): 0x063D and 0x07A8 became regular metrics; 0x0062, 0x0068,
 // 0x0070 don't answer, 0x063C and 0x0640 carry no information. Still open: what 0x063F and 0x033D (rising while
 // the compressor stands still) and the single bits of 0x0176 mean.
+//
+// 2026-11-25: which registers hold the hot water set points of Komfortbetrieb and Eco-Betrieb (+10 … +60 °C on the
+// panel)? Compare with the values set on the panel; SPEICHERSOLLTEMP (0x0003) is the effective one.
 var testIndexes = []uint16{
+	0x0013, // EINSTELL_SPEICHERSOLLTEMP
+	0x0A06, // EINSTELL_SPEICHERSOLLTEMP2
+	0x013E, // EINSTELL_SPEICHERSOLLTEMP3
+	0x0133, // WW_SOLLWERT_REDUZIERT
+	0x0118, // ECO_BETRIEB
+	0x027E, // WW_ECO
 	0x0176, // BETRIEBS_STATUS (bit field, 65 during a heating cycle)
 	0x033D, // INTEGRAL_REGELABWEICHUNG
 	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)

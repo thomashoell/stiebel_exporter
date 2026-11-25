@@ -24,7 +24,7 @@ disable the old `wlp_exporter` service before enabling `stiebel_exporter`.
 | `stiebel_heating_flow_setpoint_celsius` | | `KESSELSOLLTEMP` (0x0002) |
 | `stiebel_boiler_tank_setpoint_celsius` | | `SPEICHERSOLLTEMP` (0x0003) |
 | `stiebel_room_comfort_setpoint_celsius` | | `RAUMSOLLTEMP_I` (0x0005) |
-| `stiebel_operating_mode` | `mode` | `PROGRAMMSCHALTER` (0x0112); value = raw code, e.g. 768 = `Tagbetrieb` |
+| `stiebel_operating_mode` | `mode` | `PROGRAMMSCHALTER` (0x0112); value = raw code, e.g. 768 = `Komfortbetrieb` |
 | `stiebel_heater_flow_temperature_celsius` | | `VORLAUFISTTEMP_WP_IWS` (0x0822) |
 | `stiebel_heater_return_temperature_celsius` | | `RUECKLAUFISTTEMP_WP_IWS` (0x0823) |
 | `stiebel_heater_fan_speed_percent` | | `LUEFTERDREHZAHL` (0x0833) |

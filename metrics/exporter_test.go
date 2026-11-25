@@ -93,7 +93,7 @@ func TestHandleFrame(t *testing.T) {
 		{"heating flow set point", stiebel.Kessel, 0x0002, 324, "stiebel_heating_flow_setpoint_celsius", "stiebel_heating_flow_setpoint_celsius 32.4"},
 		{"tank set point", stiebel.Kessel, 0x0003, 480, "stiebel_boiler_tank_setpoint_celsius", "stiebel_boiler_tank_setpoint_celsius 48"},
 		{"room comfort set point", stiebel.Kessel, 0x0005, 220, "stiebel_room_comfort_setpoint_celsius", "stiebel_room_comfort_setpoint_celsius 22"},
-		{"operating mode", stiebel.Kessel, 0x0112, 0x0300, "stiebel_operating_mode", `stiebel_operating_mode{mode="Tagbetrieb"} 768`},
+		{"operating mode", stiebel.Kessel, 0x0112, 0x0300, "stiebel_operating_mode", `stiebel_operating_mode{mode="Komfortbetrieb"} 768`},
 		{"unknown operating mode", stiebel.Kessel, 0x0112, 0x0900, "stiebel_operating_mode", `stiebel_operating_mode{mode="unknown"} 2304`},
 		{"heater flow temperature", stiebel.Heizmodul, 0x0822, 308, "stiebel_heater_flow_temperature_celsius", "stiebel_heater_flow_temperature_celsius 30.8"},
 		{"heater return temperature", stiebel.Heizmodul, 0x0823, 252, "stiebel_heater_return_temperature_celsius", "stiebel_heater_return_temperature_celsius 25.2"},
@@ -418,14 +418,14 @@ func TestTestIndexesAreKnown(t *testing.T) {
 
 func TestOperatingModeKeepsOnlyCurrentMode(t *testing.T) {
 	e, reg := newTestExporter(t, &fakeBus{})
-	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0300)) // Tagbetrieb
+	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0300)) // Komfortbetrieb
 	e.HandleFrame(response(stiebel.Kessel, 0x0112, 0x0200)) // Automatik
 
 	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "stiebel_operating_mode")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(got), `stiebel_operating_mode{mode="Automatik"} 512`) || strings.Contains(string(got), "Tagbetrieb") {
+	if !strings.Contains(string(got), `stiebel_operating_mode{mode="Automatik"} 512`) || strings.Contains(string(got), "Komfortbetrieb") {
 		t.Errorf("unexpected operating mode series:\n%s", got)
 	}
 }

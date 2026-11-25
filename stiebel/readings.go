@@ -3714,13 +3714,15 @@ var errorCodes = map[uint16]string{
 	0x0021: "KEINE LEISTUNG",
 }
 
-// operatingModes maps the operating mode values (TypeOperatingMode) to their name.
+// operatingModes maps the operating mode values (TypeOperatingMode) to their name. The names follow the display of
+// the heat pump manager (WPM) where known – can_progs calls 0x0300 "Tagbetrieb" and 0x0400 "Absenkbetrieb".
+// Verified on the device: 0x0300 and 0x0400 (see docs/heat-pump-registers.md).
 var operatingModes = map[uint16]string{
 	0x0000: "Notbetrieb",
 	0x0100: "Bereitschaft",
 	0x0200: "Automatik",
-	0x0300: "Tagbetrieb",
-	0x0400: "Absenkbetrieb",
+	0x0300: "Komfortbetrieb",
+	0x0400: "Eco-Betrieb",
 	0x0500: "Warmwasser",
 }
 

@@ -19,10 +19,10 @@ noted) so the history stays traceable.
 | Index | Name | Unit | Meaning on this device |
 |---|---|---|---|
 | 0x0002 | KESSELSOLLTEMP | boiler | heating flow set point (heating curve), °C (dec) |
-| 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C |
+| 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C – **not** the effective one: in Eco-Betrieb with an Eco hot water set point of 47 °C it stayed at 48 °C (2026-11-25), probably the Komfort set point (to be confirmed) |
 | 0x0005 | RAUMSOLLTEMP_I | boiler | room comfort set point, °C |
 | 0x000C | AUSSENTEMP | boiler | outdoor temperature, °C |
-| 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code (0x0300 = 768 = Tagbetrieb) |
+| 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code: 0x0300 = 768 = **Komfortbetrieb** (verified on the WPM display, can_progs calls it Tagbetrieb); 0x0400 = 1024 = **Eco-Betrieb** (verified 2026-11-25, can_progs: Absenkbetrieb; the heating flow set point dropped from 35 to 32.1 °C, the hot water set point 0x0003 stayed at 48 °C) |
 | 0x01D2 | PUMPENSTATUS | boiler | bit field, **little endian**: 0x4000 = hot water charging, 0x0100 = same as bit 0x0200 of 0x0061 (see below), 0x1000 and 0x0002 always set |
 | 0x0265 | HEISSGAS_TEMP | heater | hot gas °C: ~100 °C while the compressor runs (up to 113 while charging hot water), decays exponentially towards ~50 °C when it stops – a good plausibility check for the compressor state |
 | 0x0822/0x0823 | VORLAUF/RUECKLAUFISTTEMP_WP_IWS | heater | flow/return measured in the heat pump, °C |
