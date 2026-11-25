@@ -99,12 +99,12 @@ func newGauges() *gauges {
 			Namespace: namespace,
 			Name:      "compressor_modulation_percent",
 			Help: "Modulation of the inverter compressor in percent (SOLLDREHZAHL_VERDICHTER_2): 0 while it stands " +
-				"still or defrosts, otherwise from the lowest stage (~28) to 100.",
+				"still (also at the start of a defrost), otherwise from the lowest stage (~28) to 100.",
 		}),
 		compressorRunning: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "compressor_running",
-			Help:      "1 while the compressor runs (bit 0x10 of VERDICHTER), 0 otherwise, also during defrosts.",
+			Help:      "1 while the compressor runs (bit 0x10 of VERDICHTER), including the reverse-cycle part of a defrost.",
 		}),
 
 		heatingFlowSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{

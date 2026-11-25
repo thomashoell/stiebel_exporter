@@ -137,7 +137,10 @@ with different scales – what 0x063F is stays **open**. More cycles are needed 
 - **0x063D is the compressor modulation in percent** (values 0 or 28–100, maximum exactly 100).
 - **Bit 0x100 of 0x07A8 is the defrost**: set at all three defrosts, to the minute together with the defrost
   counter 0x0806.
-- **Compressor running**: bit 0x10 of 0x07A8 and 0x063D > 0 match exactly and both drop during defrosts. Bit 0x0200
+- **Compressor running**: bit 0x10 of 0x07A8 and 0x063D > 0 match exactly. A defrost starts with the compressor
+  standing still (0x108, ~1–2 min) and continues with the compressor running in reverse cycle (0x118, modulation
+  ~50–60 %) – `stiebel_compressor_running` and `stiebel_heater_defrost_active` are both 1 then (corrected
+  2026-11-25, seen at all 10 defrosts of a day). Bit 0x0200
   of 0x0061 and 0x0176 = 65 mark the whole heating cycle including its defrosts.
 - 0x063F and 0x033D have no fixed start threshold – their meaning stays **open**; they are not needed for the
   metrics.
