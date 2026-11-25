@@ -22,9 +22,6 @@ var testIndexes = []uint16{
 	0x033D, // INTEGRAL_REGELABWEICHUNG
 	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)
 	0x027E, // WW_ECO
-	0x0176, // BETRIEBS_STATUS (bit field, 65 during a heating cycle)
-	0x033D, // INTEGRAL_REGELABWEICHUNG
-	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
