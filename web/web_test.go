@@ -65,7 +65,8 @@ func testServer(t *testing.T, reg *prometheus.Registry) *httptest.Server {
 	return srv
 }
 
-func get(t *testing.T, url string) (*http.Response, string) {
+// get returns status, header and body of a GET request; the body is closed here.
+func get(t *testing.T, url string) (int, http.Header, string) {
 	t.Helper()
 	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 	if err != nil {
@@ -80,7 +81,7 @@ func get(t *testing.T, url string) (*http.Response, string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return resp, string(body)
+	return resp.StatusCode, resp.Header, string(body)
 }
 
 func TestValues(t *testing.T) {
@@ -144,9 +145,9 @@ func TestNoDataBeforeFirstResponse(t *testing.T) {
 
 func TestPage(t *testing.T) {
 	srv := testServer(t, testRegistry(t, true, "Komfortbetrieb"))
-	resp, body := get(t, srv.URL+"/")
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status %d", resp.StatusCode)
+	status, header, body := get(t, srv.URL+"/")
+	if status != http.StatusOK {
+		t.Fatalf("status %d", status)
 	}
 	for _, want := range []string{
 		`<strong id="mode">Komfortbetrieb</strong>`,
@@ -159,15 +160,15 @@ func TestPage(t *testing.T) {
 			t.Errorf("page does not contain %q", want)
 		}
 	}
-	if csp := resp.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "default-src 'self'") {
+	if csp := header.Get("Content-Security-Policy"); !strings.Contains(csp, "default-src 'self'") {
 		t.Errorf("Content-Security-Policy %q", csp)
 	}
 }
 
 func TestValuesEndpoint(t *testing.T) {
 	srv := testServer(t, testRegistry(t, true, "Komfortbetrieb"))
-	resp, body := get(t, srv.URL+"/api/v1/values")
-	if ct := resp.Header.Get("Content-Type"); ct != "application/json" {
+	_, header, body := get(t, srv.URL+"/api/v1/values")
+	if ct := header.Get("Content-Type"); ct != "application/json" {
 		t.Errorf("Content-Type %q", ct)
 	}
 	var v valuesResponse
@@ -188,8 +189,8 @@ func TestValuesEndpoint(t *testing.T) {
 func TestStatic(t *testing.T) {
 	srv := testServer(t, testRegistry(t, true, "Komfortbetrieb"))
 	for _, path := range []string{"/static/style.css", "/static/app.js"} {
-		if resp, _ := get(t, srv.URL+path); resp.StatusCode != http.StatusOK {
-			t.Errorf("%s: status %d", path, resp.StatusCode)
+		if status, _, _ := get(t, srv.URL+path); status != http.StatusOK {
+			t.Errorf("%s: status %d", path, status)
 		}
 	}
 }
