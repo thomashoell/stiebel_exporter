@@ -31,7 +31,14 @@
         "name": "Heizzyklus",
         "step": "1m",
         "titleFormat": "Heizzyklus",
-        "useValueForTime": false
+        "useValueForTime": false,
+        "filter": {
+          "exclude": true,
+          "ids": [
+            4,
+            5
+          ]
+        }
       },
       {
         "datasource": {
@@ -45,7 +52,14 @@
         "name": "Abtauung",
         "step": "1m",
         "titleFormat": "Abtauung",
-        "useValueForTime": false
+        "useValueForTime": false,
+        "filter": {
+          "exclude": true,
+          "ids": [
+            4,
+            5
+          ]
+        }
       },
       {
         "datasource": {
@@ -59,7 +73,14 @@
         "name": "Warmwasser",
         "step": "1m",
         "titleFormat": "Warmwasserladung",
-        "useValueForTime": false
+        "useValueForTime": false,
+        "filter": {
+          "exclude": true,
+          "ids": [
+            4,
+            5
+          ]
+        }
       }
     ]
   },
