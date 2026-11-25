@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wärmepumpe – stiebel_exporter</title>
+<link rel="stylesheet" href="/static/style.css?v={{.Info.Commit}}">
+<script src="/static/app.js?v={{.Info.Commit}}" defer></script>
+</head>
+<body>
+<header>
+  <h1>Wärmepumpe</h1>
+  <p class="mode">Betriebsart: <strong id="mode">{{if .Mode}}{{.Mode}}{{else}}–{{end}}</strong></p>
+</header>
+<p id="offline" class="banner" role="status" hidden>Keine Verbindung zum Exporter – die Werte sind nicht aktuell.</p>
+<main>
+{{- range .Sections}}
+  <section>
+    <h2>{{.Title}}</h2>
+    <dl>
+    {{- range .Items}}
+      <div class="item" data-key="{{.Key}}"{{if .State}} data-state="{{.State}}"{{end}}>
+        <dt>{{.Label}}</dt>
+        <dd>{{.Text}}</dd>
+      </div>
+    {{- end}}
+    </dl>
+  </section>
+{{- end}}
+</main>
+<footer>
+  <p>stiebel_exporter {{.Info.Version}} · <a href="/metrics">Metrics</a> · aktualisiert <time id="updated">beim Laden</time></p>
+</footer>
+</body>
+</html>

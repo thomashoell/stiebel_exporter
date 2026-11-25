@@ -103,6 +103,22 @@ sudo install -m 0644 stiebel_exporter.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now stiebel_exporter
 ```
 
+## Web UI
+
+The exporter serves a small read-only page with the current values at `/` (e.g. `http://daedalus:9000/`):
+temperatures, set points (including the effective hot water set point of the current operating mode),
+compressor state, refrigerant circuit, defrosts, energy and the age of the last responses. It refreshes itself
+every 10 seconds, follows the light/dark setting of the browser and loads nothing from outside the exporter.
+
+The same values are available as JSON at `/api/v1/values` – per item the raw `value` (`null` without data), the
+formatted `text` and an optional `state` (`on`, `off`, `warn`):
+
+```json
+{"time":"2026-11-25T12:00:00Z","mode":"Komfortbetrieb","items":{"tank_comfort":{"value":48,"text":"48,0 °C"}, …}}
+```
+
+The values come from the exporter's own metrics, so the page causes no additional requests on the CAN bus.
+
 ## Grafana dashboard
 
 [`dashboards/stiebel-heat-pump.json`](dashboards/stiebel-heat-pump.json) is a ready-made dashboard (labels in
