@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/thomashoell/stiebel_exporter/metrics"
+	"github.com/thomashoell/stiebel_exporter/web"
 )
 
 // set by the build (-ldflags "-X main.gitTag=... -X main.gitCommit=...")
@@ -132,7 +133,7 @@ func serve(ctx context.Context, cfg config, logger *slog.Logger, bus *can.Bus, l
 	bus.SubscribeFunc(exporter.HandleFrame)
 
 	srv := &http.Server{
-		Handler:           newHandler(reg),
+		Handler:           newHandler(reg, logger),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -180,16 +181,12 @@ func serve(ctx context.Context, cfg config, logger *slog.Logger, bus *can.Bus, l
 	return errors.Join(err, srv.Shutdown(shutdownCtx), bus.Disconnect())
 }
 
-func newHandler(reg *prometheus.Registry) http.Handler {
+func newHandler(reg *prometheus.Registry, logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{
 		ErrorHandling: promhttp.HTTPErrorOnError,
 	}))
-	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = io.WriteString(w, `<html><head><title>stiebel_exporter</title></head>`+
-			`<body><h1>stiebel_exporter</h1><p><a href="/metrics">Metrics</a></p></body></html>`)
-	})
+	web.Register(mux, reg, web.Info{Version: gitTag, Commit: gitCommit}, logger)
 	return mux
 }
 

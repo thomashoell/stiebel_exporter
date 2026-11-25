@@ -5,6 +5,9 @@ before work starts.
 
 ## Web UI with the current values
 
+**Implemented (read-only)**: `web/`, page at `/`, values as JSON at `/api/v1/values`, see the README. Open: serving
+the documentation, settings (next section).
+
 A small page served by the exporter that shows the current values, like a compact version of the Grafana
 dashboard (temperatures, set points, compressor state, pressures, hot water charging, defrosts).
 
