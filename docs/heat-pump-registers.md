@@ -247,7 +247,6 @@ Registers (test poll 2026-11-26, boiler and manager answer identically):
 
 No answer: 0x05A1 NHZ_VERZOEGERUNG, 0x0589 NHZ_VERZOEGERUNG_WW, 0x058B NHZ_ANZAHL_STUFEN_WW, 0x05A8/0x05A9
 LAUFZEIT_NHZ_WW/_HEIZEN.
-Anti-legionella protection is active.
 
 Heating: below −5 °C the heating elements may help, but only after the delay of 60 min. Consistent with the data:
 the outdoor temperature fell below −5 °C only briefly (minimum −5.7 °C on the morning of 2026-11-24, a few
@@ -266,4 +265,8 @@ its electrical energy) rose by 1.13 kWh – a single comparison so far. The dash
 energy.
 
 Anti-legionella protection: no run visible in the data of 2026-11-07 … 26 (tank never above 50.2 °C, set point never
-above 48 °C). **Open:** interval and temperature of the program (panel), then look for the next run.
+above 48 °C). The control panel has no anti-legionella setting in the user menus (Thomas, 2026-11-26) – it is either
+in the installer level or a built-in function of the WPM. A weekly run (common: once a week to 60 °C, usually
+with the heating elements) would have shown up in these 19 days; so it is off, runs less often, or doesn't heat
+the tank sensor's zone. **Open:** watch for a run (tank > 55 °C or heating elements without a cold start) over
+the next weeks.
