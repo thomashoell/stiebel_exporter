@@ -32,6 +32,8 @@ func testRegistry(t *testing.T, answered bool, mode string) *prometheus.Registry
 	gauge("stiebel_heater_defrost_active", 0)
 	gauge("stiebel_compressor_modulation_percent", 43)
 	gauge("stiebel_heater_last_defrost_duration_seconds", 192)
+	gauge("stiebel_heater_defrosts", 8075)
+	gauge("stiebel_booster_heater_stages", 2)
 
 	modes := prometheus.NewGaugeVec(prometheus.GaugeOpts{Name: "stiebel_operating_mode", Help: "mode"}, []string{"mode"})
 	modes.WithLabelValues(mode).Set(768)
@@ -96,6 +98,8 @@ func TestValues(t *testing.T) {
 		"compressor":       "läuft",
 		"modulation":       "43 %",
 		"last_defrost":     "3:12 min",
+		"defrosts":         "8.075",
+		"booster":          "2 von 3",
 		"electrical_total": "22,47 MWh",
 		"age_boiler":       "vor 3 s",
 		"age_heater":       "vor 2 min",
@@ -114,8 +118,30 @@ func TestValues(t *testing.T) {
 	if got["age_heater"].State != "warn" || got["age_boiler"].State != "on" {
 		t.Errorf("age states: boiler %q, heater %q", got["age_boiler"].State, got["age_heater"].State)
 	}
+	if got["booster"].State != "heat" {
+		t.Errorf("booster state %q", got["booster"].State)
+	}
 	if got["compressor"].State != "on" {
 		t.Errorf("compressor state %q", got["compressor"].State)
+	}
+}
+
+func TestNumber(t *testing.T) {
+	for _, tt := range []struct {
+		v        float64
+		decimals int
+		want     string
+	}{
+		{8075, 0, "8.075"},
+		{1234567.891, 2, "1.234.567,89"},
+		{-1234.5, 1, "-1.234,5"},
+		{999, 0, "999"},
+		{-0.04, 1, "0,0"},
+		{0, 1, "0,0"},
+	} {
+		if got := number(tt.v, tt.decimals); got != tt.want {
+			t.Errorf("number(%v, %d) = %q, want %q", tt.v, tt.decimals, got, tt.want)
+		}
 	}
 }
 
@@ -155,6 +181,8 @@ func TestPage(t *testing.T) {
 		`46,8 °C`,
 		`href="/metrics"`,
 		`/static/app.js?v=abc1234`,
+		`<div class="tile" data-key="booster" data-state="heat">`,
+		`<dd class="sub" data-key="tank_setpoint">Soll <span data-value>48,0 °C</span></dd>`,
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page does not contain %q", want)
@@ -188,7 +216,7 @@ func TestValuesEndpoint(t *testing.T) {
 
 func TestStatic(t *testing.T) {
 	srv := testServer(t, testRegistry(t, true, "Komfortbetrieb"))
-	for _, path := range []string{"/static/style.css", "/static/app.js"} {
+	for _, path := range []string{"/static/style.css", "/static/app.js", "/static/favicon.svg"} {
 		if status, _, _ := get(t, srv.URL+path); status != http.StatusOK {
 			t.Errorf("%s: status %d", path, status)
 		}

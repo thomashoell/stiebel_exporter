@@ -160,10 +160,36 @@ type pageSection struct {
 	Items []pageItem
 }
 
+// hero lists the values shown as large tiles at the top, each with an optional secondary value.
+var hero = []struct{ key, sub, subLabel string }{
+	{"outdoor", "", ""},
+	{"tank", "tank_setpoint", "Soll"},
+	{"compressor", "modulation", "Modulation"},
+	{"booster", "", ""},
+}
+
+type heroTile struct {
+	Key, Label, Text, State   string
+	SubKey, SubLabel, SubText string
+}
+
 type pageData struct {
 	Info     Info
 	Mode     string
+	Hero     []heroTile
 	Sections []pageSection
+}
+
+// itemByKey returns the item definition with the key.
+func itemByKey(key string) (item, bool) {
+	for _, sec := range sections {
+		for _, it := range sec.items {
+			if it.key == key {
+				return it, true
+			}
+		}
+	}
+	return item{}, false
 }
 
 func (h *handler) servePage(w http.ResponseWriter, _ *http.Request) {
@@ -174,6 +200,18 @@ func (h *handler) servePage(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	data := pageData{Info: h.info, Mode: s.mode}
+	for _, t := range hero {
+		it, ok := itemByKey(t.key)
+		if !ok {
+			continue
+		}
+		v := it.evaluate(s)
+		tile := heroTile{Key: it.key, Label: it.label, Text: v.Text, State: v.State}
+		if subItem, ok := itemByKey(t.sub); ok {
+			tile.SubKey, tile.SubLabel, tile.SubText = subItem.key, t.subLabel, subItem.evaluate(s).Text
+		}
+		data.Hero = append(data.Hero, tile)
+	}
 	for _, sec := range sections {
 		ps := pageSection{Title: sec.title}
 		for _, it := range sec.items {

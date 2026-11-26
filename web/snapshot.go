@@ -97,11 +97,28 @@ func (s *snapshot) tankSetpoint() (float64, bool) {
 }
 
 // number formats v with German decimal separator.
+// number formats v the German way: decimal comma, thousands separated by dots (8.075).
 func number(v float64, decimals int) string {
-	if v == 0 {
-		v = 0 // no "-0"
+	s := strconv.FormatFloat(v, 'f', decimals, 64)
+	sign := ""
+	if strings.HasPrefix(s, "-") {
+		sign, s = "-", s[1:]
+		if strings.Trim(s, "0.") == "" {
+			sign = "" // rounded to zero: no "-0,0"
+		}
 	}
-	return strings.Replace(strconv.FormatFloat(v, 'f', decimals, 64), ".", ",", 1)
+	integer, fraction, hasFraction := strings.Cut(s, ".")
+	var b strings.Builder
+	for i, digit := range integer {
+		if i > 0 && (len(integer)-i)%3 == 0 {
+			b.WriteByte('.')
+		}
+		b.WriteRune(digit)
+	}
+	if hasFraction {
+		return sign + b.String() + "," + fraction
+	}
+	return sign + b.String()
 }
 
 func celsius(v float64) (string, string) { return number(v, 1) + " °C", "" }
@@ -125,7 +142,7 @@ func stages(v float64) (string, string) {
 	if v == 0 {
 		return "aus", "off"
 	}
-	return number(v, 0) + " von 3", "warn"
+	return number(v, 0) + " von 3", "heat"
 }
 
 func yesNo(v float64) (string, string) {
@@ -145,7 +162,7 @@ const (
 func compressorText(v float64) (string, string) {
 	switch v {
 	case compressorDefrost:
-		return "Abtauung", "warn"
+		return "Abtauung", "on" // normal operation, not a problem
 	case compressorRunning:
 		return "läuft", "on"
 	default:
