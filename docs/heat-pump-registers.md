@@ -24,8 +24,8 @@ noted) so the history stays traceable.
 |---|---|---|---|
 | 0x0002 | KESSELSOLLTEMP | boiler | heating flow set point (heating curve), °C (dec) |
 | 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C – most likely the **effective** one: 10 °C in Bereitschaftsbetrieb, 48 °C (Komfort) in Komfort- and Eco-Betrieb (see investigation 2026-11-26, Eco period of Programmbetrieb still to check) |
-| 0x0013 | EINSTELL_SPEICHERSOLLTEMP | boiler, manager | hot water set point of **Komfortbetrieb**, °C (dec); 48 °C as set on the panel (2026-11-25) |
-| 0x0A06 | EINSTELL_SPEICHERSOLLTEMP2 | boiler, manager | hot water set point of **Eco-Betrieb**, °C (dec); 47 °C as set on the panel (2026-11-25) |
+| 0x0013 | EINSTELL_SPEICHERSOLLTEMP | boiler, manager | hot water set point of **Komfortbetrieb**, °C (dec); 48 °C as set on the panel (2026-11-25); panel: Hauptmenü › Einstellungen › Warmwasser › Warmwassertemperatur › Komfort Temperatur |
+| 0x0A06 | EINSTELL_SPEICHERSOLLTEMP2 | boiler, manager | hot water set point of **Eco-Betrieb**, °C (dec); 47 °C as set on the panel (2026-11-25); panel: Hauptmenü › Einstellungen › Warmwasser › Warmwassertemperatur › Eco Temperatur |
 | 0x0005 | RAUMSOLLTEMP_I | boiler | room comfort set point, °C |
 | 0x000C | AUSSENTEMP | boiler | outdoor temperature, °C |
 | 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code; all six programs of the WPM verified (2026-11-25/26): 0x0000 = 0 **Notbetrieb**, 0x0100 = 256 **Bereitschaftsbetrieb**, 0x0200 = 512 **Programmbetrieb**, 0x0300 = 768 **Komfortbetrieb**, 0x0400 = 1024 **Eco-Betrieb**, 0x0500 = 1280 **Warmwasserbetrieb** (can_progs: Notbetrieb, Bereitschaft, Automatik, Tagbetrieb, Absenkbetrieb, Warmwasser). Eco-Betrieb lowered the heating flow set point from 35 to 32.1 °C; Bereitschaftsbetrieb and Warmwasserbetrieb set it to 7.9 °C (frost protection / heating off) |
@@ -205,3 +205,36 @@ point of 47 °C rather means: **Eco-Betrieb only lowers the heating, hot water s
 set point (0x0A06) probably applies in the Eco periods of Programmbetrieb. **Open:** confirm during an Eco period
 of Programmbetrieb (0x0003 should show 47 °C then). If confirmed, the "effective set point" logic of the web UI and
 the dashboard (Eco value in Eco-Betrieb) is wrong and 0x0003 should be shown instead.
+
+### 2026-11-26: When does the booster heater run? Bivalence point hot water
+
+Settings on the WPM (Thomas, 2026-11-26):
+
+| Setting | Hot water | Heating |
+|---|---|---|
+| Bivalence temperature | **−2 °C** | **−5 °C** |
+| Lower operating limit | −20 °C | −20 °C |
+| Number of stages (heating elements) | | 3 |
+| Delay | | 60 min |
+
+Heating: Hauptmenü › Einstellungen › Heizen › Elektrische Nacherwärmung (breadcrumb truncated on the display).
+Anti-legionella protection is active.
+
+Heating: below −5 °C the heating elements may help, but only after the delay of 60 min. Consistent with the data:
+the outdoor temperature fell below −5 °C only briefly (minimum −5.7 °C on the morning of 2026-11-24, a few
+minutes) and the booster heater's heat for heating (WE2, component heat) stayed 0.
+
+All hot water charges 2026-11-20 … 26 against the outdoor temperature at their start: the three charges below −2 °C
+(23.11. 23:03 at −2.4 °C, 24.11. 23:39 at −4.4 °C, 26.11. 07:10 at −3.7 °C) ran with the heating elements, all 17
+charges at −0.9 … +6.4 °C without. Below the bivalence point the WPM adds the heating elements to the heat pump for
+hot water; the charges are shorter then (17–19 min instead of 30–45 min). Below −20 °C the elements would heat hot
+water alone. This explains the high hot water share of the booster heater counter (2.9 of 4.6 MWh since
+commissioning).
+
+The WPM's electrical energy counters (EL_AUFNAHMELEISTUNG_*) most likely don't include the heating elements: from
+12:15 to 13:15 on 2026-11-26 (Notbetrieb test) they rose by 0.93 kWh while the booster heater's heat (WE2, equal to
+its electrical energy) rose by 1.13 kWh – a single comparison so far. The dashboard adds WE2 to the electrical
+energy.
+
+Anti-legionella protection: no run visible in the data of 2026-11-07 … 26 (tank never above 50.2 °C, set point never
+above 48 °C). **Open:** interval and temperature of the program (panel), then look for the next run.
