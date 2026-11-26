@@ -18,8 +18,17 @@ noted) so the history stays traceable.
 - candump 2026-11-26 (2 min): besides 0x180, 0x480, 0x500 and the exporter (0x680) two more senders – **0x100**
   reads outdoor, tank and return temperature from the boiler and gets the time and settings from the manager
   (probably the FES remote control), **0x700** answers the manager every 5 s on 0xFDF3–0xFE4C (values like
-  temperatures in 0.1 °C: 36.2, 28.0, 36.5, 2.7, 21.5 °C; probably the MFG multi-function group). **Open:** identify
-  both via SOFTWARE_NUMMER/SOFTWARE_VERSION (0x0199/0x019A, test poll since 2026-11-26).
+  temperatures in 0.1 °C: 36.2, 28.0, 36.5, 2.7, 21.5 °C).
+- Software numbers (test poll 2026-11-26): 0x180 and 0x480 answer 390/13 (WPM3 390-13 – one device, two
+  addresses), 0x500 answers 446/4 (WP1 446-04). INFO_TYP (0x019C) boiler 129, GERAETE_KENNUNG (0x0148) heater 3;
+  GERAETE_ID (0x000B) unanswered. **0x100 and 0x700 don't answer requests** at all; 0x700's answers to the manager
+  are picked up passively.
+- 0x700, first values: 0xFDF3 40.0 and 0xFDF5 40.3 ≈ boiler flow 40.3 °C; 0xFDF4 32.5 matches nothing known;
+  0xFE07 2.8 vs. 1.9 °C outdoor at the boiler; 0xFE09 21.9; 0xFE4C 18. No mixer circuit, buffer tank or room
+  sensor known in the installation (Thomas). The boiler's outdoor temperature (0x000C) comes from the sensor on
+  the house wall at ~2.5 m; 0xFE07 could be a separate sensor at the heat pump itself (Thomas) – which suggests
+  0x700 might rather be the outdoor unit's (inverter) controller than the MFG. **Open:** compare the 0x700 values
+  over heating cycles and a hot water charge; identify 0x100.
 - **0x100 is the control panel** (most likely the FES in the list of bus participants): when the operating mode is
   changed on the panel, 0x100 writes PROGRAMMSCHALTER to the manager (`100#9000FA01120400` = write 0x0112 = 0x0400
   to 0x480), the manager passes it on to 0x100 and 0x519 (0x?19 look like group addresses), and the boiler reports
