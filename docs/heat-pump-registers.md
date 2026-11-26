@@ -268,5 +268,7 @@ Anti-legionella protection: no run visible in the data of 2026-11-07 … 26 (tan
 above 48 °C). The control panel has no anti-legionella setting in the user menus (Thomas, 2026-11-26) – it is either
 in the installer level or a built-in function of the WPM. A weekly run (common: once a week to 60 °C, usually
 with the heating elements) would have shown up in these 19 days; so it is off, runs less often, or doesn't heat
-the tank sensor's zone. **Open:** watch for a run (tank > 55 °C or heating elements without a cold start) over
+the tank sensor's zone. A trigger depending on the drawn volume (Thomas) is possible in principle, but the WPM has
+no flow meter for hot water – it could only estimate the draw from the charges or the temperature drop.
+**Open:** watch for a run (tank > 55 °C or heating elements without a cold start) over
 the next weeks.
