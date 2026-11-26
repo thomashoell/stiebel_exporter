@@ -415,12 +415,30 @@ func TestTestMetricsDisabled(t *testing.T) {
 	}
 }
 
-func TestTestIndexesAreKnown(t *testing.T) {
+func TestTestMetricsUnknownIndexAndTestUnit(t *testing.T) {
+	defer func(saved []uint16) { testIndexes = saved }(testIndexes)
+	testIndexes = []uint16{0xFE09} // not in the Elster table
+	reg := prometheus.NewRegistry()
+	e, err := New(reg, &fakeBus{}, slog.New(slog.NewTextHandler(io.Discard, nil)), WithTestMetrics(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// 0x700 only exists as unit with test metrics; its responses to the manager are picked up as well
+	e.HandleFrame(response(stiebel.Fremdgeraet, 0xFE09, 215))
+
+	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "test_stiebel_register_value")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `test_stiebel_register_value{index="0xFE09",name="",unit="0x700"} 215`; !strings.Contains(string(got), want+"\n") {
+		t.Errorf("expected %q in\n%s", want, got)
+	}
+}
+
+func TestTestIndexesAreUnique(t *testing.T) {
 	seen := map[uint16]bool{}
 	for _, index := range testIndexes {
-		if stiebel.Reading(index) == nil {
-			t.Errorf("test index %04X is not in the Elster table", index)
-		}
 		if seen[index] {
 			t.Errorf("test index %04X is listed twice", index)
 		}

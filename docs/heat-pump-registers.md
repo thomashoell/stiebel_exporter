@@ -13,6 +13,13 @@ noted) so the history stays traceable.
   manager `0x480`. The exporter acts like ComfortSoft (`0x680`).
 - Set points (0x0002, 0x0003, 0x0005, 0x0112) answer identically from boiler and manager.
 - A response with value `0x8000` means "not available".
+- Bus participants (panel: Hauptmenü › Diagnose › System › Busteilnehmer): WPM3 software 390-13, FES 417-07, MFG 18,
+  WP1 446-04; heat pump type (… › Wärmepumpentypen): WPL 17 ACS classic, DIP 1.
+- candump 2026-11-26 (2 min): besides 0x180, 0x480, 0x500 and the exporter (0x680) two more senders – **0x100**
+  reads outdoor, tank and return temperature from the boiler and gets the time and settings from the manager
+  (probably the FES remote control), **0x700** answers the manager every 5 s on 0xFDF3–0xFE4C (values like
+  temperatures in 0.1 °C: 36.2, 28.0, 36.5, 2.7, 21.5 °C; probably the MFG multi-function group). **Open:** identify
+  both via SOFTWARE_NUMMER/SOFTWARE_VERSION (0x0199/0x019A, test poll since 2026-11-26).
 - **0x100 is the control panel** (most likely the FES in the list of bus participants): when the operating mode is
   changed on the panel, 0x100 writes PROGRAMMSCHALTER to the manager (`100#9000FA01120400` = write 0x0112 = 0x0400
   to 0x480), the manager passes it on to 0x100 and 0x519 (0x?19 look like group addresses), and the boiler reports

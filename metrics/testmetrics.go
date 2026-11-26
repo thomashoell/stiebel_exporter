@@ -33,10 +33,28 @@ var testIndexes = []uint16{
 	0x019A, // SOFTWARE_VERSION
 	0x0148, // GERAETE_KENNUNG
 	0x019C, // INFO_TYP
+	// Registers the manager polls from 0x700 every 5 s (candump 2026-11-26); can_progs names don't fit, the values
+	// look like temperatures in 0.1 °C. Indexes missing in the table are exported with an empty name.
+	0xFDF3, // 36.2–37.x
+	0xFDF4, // 28.0–28.3
+	0xFDF5, // 36.5–37.7
+	0xFE07, // 2.5–2.9 (second outdoor temperature?)
+	0xFE09, // 21.5–21.8 (room temperature?)
+	0xFE1B, // counts down 7 → 0
+	0xFE1D, // 1
+	0xFE1E, // 0
+	0xFE4C, // 18
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
-var testUnits = []string{"boiler", "heater", "manager"}
+var testUnits = []string{"boiler", "heater", "manager", "0x100", "0x700"}
+
+// newTestUnits returns the bus participants that only exist for test metrics: seen on the bus (candump 2026-11-26)
+// but not identified yet – 0x100 reads values from the boiler (probably the FES remote control), 0x700 answers the
+// manager (probably the MFG multi-function group). They are named after their CAN ID until they are identified.
+func newTestUnits() []*unit {
+	return []*unit{newUnit("0x100", 0x100), newUnit("0x700", stiebel.Fremdgeraet)}
+}
 
 func newTestValues() *prometheus.GaugeVec {
 	return prometheus.NewGaugeVec(prometheus.GaugeOpts{
