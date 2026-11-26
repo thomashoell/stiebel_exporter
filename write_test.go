@@ -42,7 +42,7 @@ func (f *fakeHeatPump) Publish(frm can.Frame) error {
 		}
 	case stiebel.Read:
 		data, err := stiebel.ResponseData(stiebel.PC, &stiebel.ElsterReading{Index: msg.Index, Type: stiebel.TypeNone},
-			float64(int16(f.mode))) //nolint:gosec // test values are small
+			float64(int16(f.mode)))
 		if err != nil {
 			return err
 		}

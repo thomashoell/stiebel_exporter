@@ -79,7 +79,7 @@ func parseFlags(args []string, output io.Writer) (config, error) {
 	if *receiver != uint(stiebel.Kessel) && *receiver != uint(stiebel.Manager) {
 		return cfg, fmt.Errorf("write receiver must be 0x180 or 0x480, got 0x%X", *receiver)
 	}
-	cfg.writeReceiver = uint16(*receiver) //nolint:gosec // checked above
+	cfg.writeReceiver = uint16(*receiver)
 	return cfg, nil
 }
 
