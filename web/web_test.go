@@ -1,7 +1,9 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -60,8 +62,13 @@ func testRegistry(t *testing.T, answered bool, mode string) *prometheus.Registry
 
 func testServer(t *testing.T, reg *prometheus.Registry) *httptest.Server {
 	t.Helper()
+	return testServerWithSetter(t, reg, nil)
+}
+
+func testServerWithSetter(t *testing.T, reg *prometheus.Registry, setter ModeSetter) *httptest.Server {
+	t.Helper()
 	mux := http.NewServeMux()
-	Register(mux, reg, Info{Version: "2.4.0", Commit: "abc1234"}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	Register(mux, reg, Info{Version: "2.4.0", Commit: "abc1234"}, slog.New(slog.NewTextHandler(io.Discard, nil)), setter)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return srv
@@ -217,5 +224,117 @@ func TestStatic(t *testing.T) {
 		if status, _, _ := get(t, srv.URL+path); status != http.StatusOK {
 			t.Errorf("%s: status %d", path, status)
 		}
+	}
+}
+
+// fakeSetter records the operating modes set; err makes every write fail.
+type fakeSetter struct {
+	set []string
+	err error
+}
+
+func (f *fakeSetter) OperatingModes() []string { return []string{"Komfortbetrieb", "Eco-Betrieb"} }
+
+func (f *fakeSetter) SetOperatingMode(_ context.Context, name string) (string, error) {
+	if f.err != nil {
+		return "", f.err
+	}
+	f.set = append(f.set, name)
+	return name, nil
+}
+
+// post sends body to url with the content type and optional extra headers and returns status and body.
+func post(t *testing.T, url, contentType, body string, header map[string]string) (int, string) {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodPost, url, strings.NewReader(body))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", contentType)
+	for k, v := range header {
+		req.Header.Set(k, v)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp.StatusCode, string(b)
+}
+
+func TestPageReadOnlyHasNoModeForm(t *testing.T) {
+	srv := testServer(t, testRegistry(t, true, "Komfortbetrieb"))
+	if _, _, body := get(t, srv.URL+"/"); strings.Contains(body, "mode-form") {
+		t.Error("read-only page contains the mode form")
+	}
+	status, _ := post(t, srv.URL+"/api/v1/operating-mode", "application/json", `{"mode":"Eco-Betrieb"}`, nil)
+	if status != http.StatusNotFound {
+		t.Errorf("read-only: status %d, want 404", status)
+	}
+}
+
+func TestPageModeForm(t *testing.T) {
+	srv := testServerWithSetter(t, testRegistry(t, true, "Komfortbetrieb"), &fakeSetter{})
+	_, _, body := get(t, srv.URL+"/")
+	for _, want := range []string{`id="mode-form"`, `<option selected>Komfortbetrieb</option>`, `<option>Eco-Betrieb</option>`} {
+		if !strings.Contains(body, want) {
+			t.Errorf("page does not contain %q", want)
+		}
+	}
+	if strings.Contains(body, "disabled>") {
+		t.Error("placeholder option for a settable mode")
+	}
+}
+
+func TestPageModeFormNotSettable(t *testing.T) {
+	srv := testServerWithSetter(t, testRegistry(t, true, "Notbetrieb"), &fakeSetter{})
+	if _, _, body := get(t, srv.URL+"/"); !strings.Contains(body, `<option value="" selected disabled>Notbetrieb</option>`) {
+		t.Error("no placeholder option for Notbetrieb")
+	}
+}
+
+func TestSetOperatingMode(t *testing.T) {
+	setter := &fakeSetter{}
+	srv := testServerWithSetter(t, testRegistry(t, true, "Komfortbetrieb"), setter)
+	url := srv.URL + "/api/v1/operating-mode"
+	status, body := post(t, url, "application/json", `{"mode":"Eco-Betrieb"}`, nil)
+	if status != http.StatusOK || !strings.Contains(body, `"mode":"Eco-Betrieb"`) {
+		t.Errorf("status %d, body %s", status, body)
+	}
+	if len(setter.set) != 1 || setter.set[0] != "Eco-Betrieb" {
+		t.Errorf("set %v", setter.set)
+	}
+
+	for _, tc := range []struct {
+		name, contentType, body string
+		header                  map[string]string
+		want                    int
+	}{
+		{"not settable", "application/json", `{"mode":"Notbetrieb"}`, nil, http.StatusBadRequest},
+		{"invalid JSON", "application/json", `{`, nil, http.StatusBadRequest},
+		{"form", "application/x-www-form-urlencoded", `mode=Eco-Betrieb`, nil, http.StatusUnsupportedMediaType},
+		{
+			"other origin", "application/json", `{"mode":"Eco-Betrieb"}`,
+			map[string]string{"Sec-Fetch-Site": "cross-site"}, http.StatusForbidden,
+		},
+	} {
+		if status, _ := post(t, url, tc.contentType, tc.body, tc.header); status != tc.want {
+			t.Errorf("%s: status %d, want %d", tc.name, status, tc.want)
+		}
+	}
+	if len(setter.set) != 1 {
+		t.Errorf("rejected requests were written: %v", setter.set)
+	}
+}
+
+func TestSetOperatingModeFails(t *testing.T) {
+	srv := testServerWithSetter(t, testRegistry(t, true, "Komfortbetrieb"), &fakeSetter{err: errors.New("no response")})
+	status, body := post(t, srv.URL+"/api/v1/operating-mode", "application/json", `{"mode":"Eco-Betrieb"}`, nil)
+	if status != http.StatusBadGateway || !strings.Contains(body, "no response") {
+		t.Errorf("status %d, body %s", status, body)
 	}
 }

@@ -21,8 +21,16 @@ dashboard (temperatures, set points, compressor state, pressures, hot water char
 
 Use case: heat the hot water tank when there is enough PV surplus, so it doesn't have to happen at night.
 
-- Writing is not supported yet; the protocol pieces exist (`stiebel.EncodeValue`, `EncodeReceiver`), a write
-  telegram to the boiler/WPM (`0x180`) is missing.
+- First write test (2026-11-26): `-set-operating-mode` (write.go) writes PROGRAMMSCHALTER (0x0112) once and reads
+  it back; `stiebel.WriteFrame` builds the write telegram. The control panel writes it to the **manager (0x480)**: candump
+  of a change Komfort → Eco → Komfort on the panel shows `100#9000FA01120400` (0x100 writes 0x0400 to 0x480), then
+  the manager forwards it (`480#2000FA01120400` to 0x100, `480#A079FA01120400` to 0x519) and the boiler (0x180)
+  answers the new value about 5 s later. The WPM accepts the same write from 0x680: `-set-operating-mode` (Komfort → Eco → Komfort, 2026-11-26)
+  produced the same sequence – manager forwards to 0x100 and 0x519, the boiler reports the new value at the next
+  poll, and the read-back from 0x480 confirms it after 3 s.
+- Web UI (2026-11-26): with `-web-write`, the page offers the operating mode selection
+  (`POST /api/v1/operating-mode`, same guard rails as the command line: no Notbetrieb, read back, one write at a
+  time, other origins rejected). No authentication yet.
 - Candidates: `SPEICHERSOLLTEMP` (0x0003) to trigger hot water charging; possibly `PROGRAMMSCHALTER` (0x0112).
 - A CAN write changes the same parameter as the control panel (ComfortSoft and the ISG use the same path), but it
   is not necessarily equivalent to a change on the panel:

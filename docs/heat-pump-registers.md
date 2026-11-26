@@ -13,6 +13,10 @@ noted) so the history stays traceable.
   manager `0x480`. The exporter acts like ComfortSoft (`0x680`).
 - Set points (0x0002, 0x0003, 0x0005, 0x0112) answer identically from boiler and manager.
 - A response with value `0x8000` means "not available".
+- **0x100 is the control panel** (most likely the FES in the list of bus participants): when the operating mode is
+  changed on the panel, 0x100 writes PROGRAMMSCHALTER to the manager (`100#9000FA01120400` = write 0x0112 = 0x0400
+  to 0x480), the manager passes it on to 0x100 and 0x519 (0x?19 look like group addresses), and the boiler reports
+  the new value about 5 s later (candump 2026-11-26).
 
 ## Verified registers
 

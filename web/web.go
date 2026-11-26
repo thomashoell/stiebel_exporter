@@ -1,14 +1,18 @@
-// Package web serves a small read-only web UI with the current values of the heat pump. The values come from the
-// Prometheus registry of the exporter, so the UI causes no additional requests on the CAN bus.
+// Package web serves a small web UI with the current values of the heat pump. The values come from the Prometheus
+// registry of the exporter, so the UI causes no additional requests on the CAN bus. With a ModeSetter, the UI can
+// also change the operating mode.
 package web
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"html/template"
 	"io/fs"
 	"log/slog"
+	"mime"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,6 +26,17 @@ type Info struct {
 	Version string
 	Commit  string
 }
+
+// ModeSetter changes the operating mode of the heat pump.
+type ModeSetter interface {
+	// OperatingModes returns the names of the operating modes that may be set.
+	OperatingModes() []string
+	// SetOperatingMode sets the operating mode and returns the name read back from the heat pump.
+	SetOperatingMode(ctx context.Context, name string) (string, error)
+}
+
+// setTimeout bounds a write including waiting for a running one; below the write timeout of the HTTP server.
+const setTimeout = 12 * time.Second
 
 // item is one value shown in the UI.
 type item struct {
@@ -123,10 +138,13 @@ type handler struct {
 	logger   *slog.Logger
 	page     *template.Template
 	now      func() time.Time
+	setter   ModeSetter
 }
 
 // Register adds the UI to mux: the page at /, its assets at /static/ and the current values at /api/v1/values.
-func Register(mux *http.ServeMux, g prometheus.Gatherer, info Info, logger *slog.Logger) {
+// With a setter (may be nil), POST /api/v1/operating-mode changes the operating mode; requests from other origins
+// are rejected.
+func Register(mux *http.ServeMux, g prometheus.Gatherer, info Info, logger *slog.Logger, setter ModeSetter) {
 	static, err := fs.Sub(content, "static")
 	if err != nil {
 		panic(err) // the embedded directory always exists
@@ -137,10 +155,15 @@ func Register(mux *http.ServeMux, g prometheus.Gatherer, info Info, logger *slog
 		logger:   logger,
 		page:     template.Must(template.ParseFS(content, "templates/index.html")),
 		now:      time.Now,
+		setter:   setter,
 	}
 	mux.Handle("GET /static/", secure(http.StripPrefix("/static/", http.FileServerFS(static))))
 	mux.Handle("GET /{$}", secure(http.HandlerFunc(h.servePage)))
 	mux.Handle("GET /api/v1/values", secure(http.HandlerFunc(h.serveValues)))
+	if setter != nil {
+		mux.Handle("POST /api/v1/operating-mode",
+			secure(http.NewCrossOriginProtection().Handler(http.HandlerFunc(h.setOperatingMode))))
+	}
 }
 
 // secure sets headers that keep the page from loading anything but its own assets.
@@ -180,6 +203,10 @@ type pageData struct {
 	Mode     string
 	Hero     []heroTile
 	Sections []pageSection
+	// Modes are the operating modes that can be set; empty if the UI is read-only.
+	Modes []string
+	// ModeSettable is set if the current mode is one of Modes.
+	ModeSettable bool
 }
 
 // allItems returns the items of the tiles and of all sections.
@@ -209,6 +236,10 @@ func (h *handler) servePage(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	data := pageData{Info: h.info, Mode: s.mode}
+	if h.setter != nil {
+		data.Modes = h.setter.OperatingModes()
+		data.ModeSettable = slices.Contains(data.Modes, s.mode)
+	}
 	for _, t := range hero {
 		it, ok := itemByKey(t.key)
 		if !ok {
@@ -257,4 +288,48 @@ func (h *handler) serveValues(w http.ResponseWriter, _ *http.Request) {
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Warn("cannot write values", "error", err)
 	}
+}
+
+type modeRequest struct {
+	Mode string `json:"mode"`
+}
+
+type modeResponse struct {
+	Mode  string `json:"mode,omitempty"`
+	Error string `json:"error,omitempty"`
+}
+
+func writeJSON(w http.ResponseWriter, status int, v any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(v)
+}
+
+// setOperatingMode handles POST /api/v1/operating-mode with a JSON body {"mode": "<name>"}.
+func (h *handler) setOperatingMode(w http.ResponseWriter, r *http.Request) {
+	if ct, _, err := mime.ParseMediaType(r.Header.Get("Content-Type")); err != nil || ct != "application/json" {
+		writeJSON(w, http.StatusUnsupportedMediaType, modeResponse{Error: "content type must be application/json"})
+		return
+	}
+	var req modeRequest
+	if err := json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, modeResponse{Error: "invalid request"})
+		return
+	}
+	if !slices.Contains(h.setter.OperatingModes(), req.Mode) {
+		writeJSON(w, http.StatusBadRequest, modeResponse{Error: "operating mode cannot be set"})
+		return
+	}
+	logger := h.logger.With("mode", req.Mode, "remote", r.RemoteAddr, "forwarded_for", r.Header.Get("X-Forwarded-For"))
+	logger.Info("operating mode change requested in the web UI")
+	ctx, cancel := context.WithTimeout(r.Context(), setTimeout)
+	defer cancel()
+	mode, err := h.setter.SetOperatingMode(ctx, req.Mode)
+	if err != nil {
+		logger.Warn("cannot set the operating mode", "error", err)
+		writeJSON(w, http.StatusBadGateway, modeResponse{Error: err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, modeResponse{Mode: mode})
 }

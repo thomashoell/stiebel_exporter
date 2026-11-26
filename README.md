@@ -105,9 +105,21 @@ sudo install -m 0644 stiebel_exporter.service /etc/systemd/system/
 sudo systemctl daemon-reload && sudo systemctl enable --now stiebel_exporter
 ```
 
+### Experimental: setting the operating mode
+
+```
+stiebel_exporter -set-operating-mode Eco-Betrieb [-write-receiver 0x480] [-dry-run]
+```
+
+Writes the operating mode once (`Bereitschaftsbetrieb`, `Programmbetrieb`, `Komfortbetrieb`, `Eco-Betrieb`,
+`Warmwasserbetrieb`; not `Notbetrieb`), reads it back before and after, prints both and exits non-zero if the heat
+pump didn't take it. `-dry-run` only prints the frame. Like the control panel, it writes to the manager (0x480) by default and reads
+the mode back from the same address. It can run while the exporter is running. This is a first
+test of write support, see [docs/roadmap.md](docs/roadmap.md) – it changes the same setting as the control panel.
+
 ## Web UI
 
-The exporter serves a small read-only page with the current values at `/` (e.g. `http://daedalus:9000/`):
+The exporter serves a small page with the current values at `/` (e.g. `http://daedalus:9000/`):
 temperatures, set points (including the effective hot water set point of the current operating mode),
 compressor state, refrigerant circuit, defrosts, energy and the age of the last responses. It refreshes itself
 every 10 seconds, follows the light/dark setting of the browser and loads nothing from outside the exporter.
@@ -120,6 +132,21 @@ formatted `text` and an optional `state` (`on`, `off`, `warn`):
 ```
 
 The values come from the exporter's own metrics, so the page causes no additional requests on the CAN bus.
+
+### Experimental: changing the operating mode in the web UI
+
+With `-web-write`, the page shows a selection of the operating modes (same list as `-set-operating-mode`). A change
+is confirmed in the browser, written to the `-write-receiver` (default: manager 0x480) and read back after 3 s; the
+page shows whether the heat pump took it. The API behind it:
+
+```
+curl -X POST -H 'Content-Type: application/json' -d '{"mode":"Eco-Betrieb"}' http://daedalus:9000/api/v1/operating-mode
+```
+
+It answers `{"mode":"Eco-Betrieb"}` (200), 400 for a mode that cannot be set and 502 if the heat pump did not answer
+or did not take the mode. Requests from other origins (`Sec-Fetch-Site`/`Origin`) are rejected, and only one write
+runs at a time. **There is no authentication yet** – only enable it in a trusted network (authentication via
+Keycloak is planned, see [docs/roadmap.md](docs/roadmap.md)). Every change is logged with the client address.
 
 ## Grafana dashboard
 

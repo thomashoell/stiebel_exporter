@@ -42,6 +42,16 @@ func ErrorText(code uint16) (string, bool) {
 	return text, ok
 }
 
+// OperatingModeCode returns the value of an operating mode name, the reverse of OperatingModeName.
+func OperatingModeCode(name string) (uint16, bool) {
+	for code, n := range operatingModes {
+		if n == name {
+			return code, true
+		}
+	}
+	return 0, false
+}
+
 // OperatingModeName returns the name of an operating mode value.
 func OperatingModeName(mode uint16) (string, bool) {
 	name, ok := operatingModes[mode]

@@ -13,6 +13,21 @@
   <h1>Wärmepumpe</h1>
   <p class="mode">Betriebsart: <strong id="mode">{{if .Mode}}{{.Mode}}{{else}}–{{end}}</strong></p>
 </header>
+{{- if .Modes}}
+<form id="mode-form" class="mode-form">
+  <label for="mode-select">Betriebsart ändern</label>
+  <select id="mode-select" name="mode">
+    {{- if not .ModeSettable}}
+    <option value="" selected disabled>{{if .Mode}}{{.Mode}}{{else}}–{{end}}</option>
+    {{- end}}
+    {{- range .Modes}}
+    <option{{if eq . $.Mode}} selected{{end}}>{{.}}</option>
+    {{- end}}
+  </select>
+  <button type="submit">Übernehmen</button>
+  <span id="mode-status" class="mode-status" role="status"></span>
+</form>
+{{- end}}
 <p id="offline" class="banner" role="status" hidden>Keine Verbindung zum Exporter – die Werte sind nicht aktuell.</p>
 <dl class="hero">
 {{- range .Hero}}
