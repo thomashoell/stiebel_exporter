@@ -28,7 +28,7 @@ noted) so the history stays traceable.
   sensor known in the installation (Thomas). The boiler's outdoor temperature (0x000C) comes from the sensor on
   the house wall at ~2.5 m; 0xFE07 could be a separate sensor at the heat pump itself (Thomas) – which suggests
   0x700 might rather be the outdoor unit's (inverter) controller than the MFG. **Open:** compare the 0x700 values
-  over heating cycles and a hot water charge; identify 0x100.
+  over heating cycles and a hot water charge. 0x100 is the control panel (below).
 - **0x100 is the control panel** (most likely the FES in the list of bus participants): when the operating mode is
   changed on the panel, 0x100 writes PROGRAMMSCHALTER to the manager (`100#9000FA01120400` = write 0x0112 = 0x0400
   to 0x480), the manager passes it on to 0x100 and 0x519 (0x?19 look like group addresses), and the boiler reports
