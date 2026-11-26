@@ -62,8 +62,10 @@ test_stiebel_register_value{unit="manager",index="0x0074",name="EVU_SPERRE_AKTIV
 Indexes a unit doesn't know never show up. An index that already feeds a regular metric is not requested twice;
 its decoded value is exported as test value in addition (e.g. all bits of a bit field). Indexes missing in the
 Elster table are exported with an empty `name`, decoded as plain 16 bit integers. With test metrics, the two bus
-participants that are not identified yet (`unit="0x100"`, `unit="0x700"`) are asked too, and their responses to
-other participants are picked up as well. Names and scaling come from the can_progs table and are not verified:
+participants that are not identified yet (`unit="0x100"`, `unit="0x700"`) are listened to: they don't answer
+requests, but their responses to other participants are picked up. Mind the bus load: every test index is requested
+from boiler, heater and manager once per `-test-interval` (~50 ms each), so use `-test-interval 1m` or longer with
+many test indexes. Names and scaling come from the can_progs table and are not verified:
 compare the values with the heat pump's display, then promote the useful ones to proper `stiebel_*` metrics.
 The test values are polled once per `-test-interval` (each request takes ~50 ms of bus time).
 

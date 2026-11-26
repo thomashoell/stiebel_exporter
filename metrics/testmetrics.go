@@ -44,6 +44,18 @@ var testIndexes = []uint16{
 	0xFE1D, // 1
 	0xFE1E, // 0
 	0xFE4C, // 18
+	// 2026-11-26: booster heater settings, compared with the panel (Einstellungen › Heizen/Warmwasser › Elektrische
+	// Nacherwärmung): bivalence −5 °C heating / −2 °C hot water, lower limit −20 °C, 3 stages, delay 60 min
+	0x01AC, // BIVALENTPARALLELTEMPERATUR_HZG (expected −5.0)
+	0x01AD, // BIVALENTPARALLELTEMPERATUR_WW (expected −2.0)
+	0x01AE, // BIVALENZALTERNATIVTEMPERATUR_HZG (expected −20.0?)
+	0x01AF, // BIVALENZALTERNATIVTEMPERATUR_WW (expected −20.0?)
+	0x05A0, // NHZ_ANZAHL_STUFEN (expected 3)
+	0x05A1, // NHZ_VERZOEGERUNG (expected 60)
+	0x058B, // NHZ_ANZAHL_STUFEN_WW
+	0x0589, // NHZ_VERZOEGERUNG_WW
+	0x05A8, // LAUFZEIT_NHZ_WW
+	0x05A9, // LAUFZEIT_NHZ_HEIZEN
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
@@ -51,7 +63,8 @@ var testUnits = []string{"boiler", "heater", "manager", "0x100", "0x700"}
 
 // newTestUnits returns the bus participants that only exist for test metrics: seen on the bus (candump 2026-11-26)
 // but not identified yet – 0x100 reads values from the boiler (probably the FES remote control), 0x700 answers the
-// manager (probably the MFG multi-function group). They are named after their CAN ID until they are identified.
+// manager (probably the MFG multi-function group or the outdoor unit). They are named after their CAN ID until they
+// are identified, and they are not asked: they don't answer requests, their responses to others are picked up.
 func newTestUnits() []*unit {
 	return []*unit{newUnit("0x100", 0x100), newUnit("0x700", stiebel.Fremdgeraet)}
 }

@@ -366,7 +366,8 @@ func TestTestMetrics(t *testing.T) {
 	regular := len(bus.frames)
 
 	e.PollTest(context.Background())
-	if got, want := len(bus.frames)-regular, len(testIndexes)*len(testUnits)-1; got != want {
+	// boiler, heater and manager are asked; 0x100 and 0x700 are only listened to
+	if got, want := len(bus.frames)-regular, len(testIndexes)*3-1; got != want {
 		t.Errorf("test poll sent %d requests, want %d", got, want)
 	}
 

@@ -89,12 +89,17 @@ func New(reg prometheus.Registerer, bus stiebel.Publisher, logger *slog.Logger, 
 
 	collectors := append(g.collectors(), e.responses, e.lastResponse, e.publishErrors)
 	if e.testInterval > 0 {
-		e.units = append(e.units, newTestUnits()...)
+		listenOnly := newTestUnits()
+		e.units = append(e.units, listenOnly...)
 		testValues := newTestValues()
 		for _, u := range e.units {
 			if slices.Contains(testUnits, u.name) {
 				u.addTestIndexes(testValues)
 			}
+		}
+		// they don't answer requests (2026-11-26): only their responses to other participants are picked up
+		for _, u := range listenOnly {
+			u.testPolled = nil
 		}
 		collectors = append(collectors, testValues)
 	}
