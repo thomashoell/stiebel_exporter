@@ -48,6 +48,7 @@ func TestParseFlags(t *testing.T) {
 		{"-interval", "0s"},
 		{"-test-interval", "0s"},
 		{"-log-level", "verbose"},
+		{"-write-receiver", "0x500"},
 		{"-unknown"},
 		{"extra"},
 	} {

@@ -21,8 +21,9 @@ dashboard (temperatures, set points, compressor state, pressures, hot water char
 
 Use case: heat the hot water tank when there is enough PV surplus, so it doesn't have to happen at night.
 
-- Writing is not supported yet; the protocol pieces exist (`stiebel.EncodeValue`, `EncodeReceiver`), a write
-  telegram to the boiler/WPM (`0x180`) is missing.
+- First write test (2026-11-26): `-set-operating-mode` (write.go) writes PROGRAMMSCHALTER (0x0112) once and reads
+  it back; `stiebel.WriteFrame` builds the write telegram. **Open:** does the WPM accept it, and on which address
+  (0x180 or 0x480)?
 - Candidates: `SPEICHERSOLLTEMP` (0x0003) to trigger hot water charging; possibly `PROGRAMMSCHALTER` (0x0112).
 - A CAN write changes the same parameter as the control panel (ComfortSoft and the ISG use the same path), but it
   is not necessarily equivalent to a change on the panel:
