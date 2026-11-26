@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"io"
 	"log/slog"
 	"strings"
@@ -114,3 +115,30 @@ type silentBus struct{ published int }
 
 func (b *silentBus) SubscribeFunc(can.HandlerFunc) {}
 func (b *silentBus) Publish(can.Frame) error       { b.published++; return nil }
+
+func TestModeWriterSetOperatingMode(t *testing.T) {
+	hp := &fakeHeatPump{mode: 0x0300}
+	w := newModeWriter(hp, stiebel.Manager, time.Millisecond, time.Second, discard)
+	for _, name := range []string{"Eco-Betrieb", "Komfortbetrieb"} {
+		got, err := w.SetOperatingMode(context.Background(), name)
+		if err != nil || got != name {
+			t.Errorf("%s: got %q, %v", name, got, err)
+		}
+	}
+	if hp.writes != 2 {
+		t.Errorf("%d writes, want 2", hp.writes)
+	}
+	if _, err := w.SetOperatingMode(context.Background(), "Notbetrieb"); err == nil {
+		t.Error("Notbetrieb: expected an error")
+	}
+}
+
+func TestModeWriterWaitsForRunningWrite(t *testing.T) {
+	w := newModeWriter(&silentBus{}, stiebel.Manager, time.Millisecond, time.Second, discard)
+	w.busy <- struct{}{} // a write is running
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	defer cancel()
+	if _, err := w.SetOperatingMode(ctx, "Eco-Betrieb"); !errors.Is(err, context.DeadlineExceeded) {
+		t.Errorf("expected the deadline to pass while waiting, got %v", err)
+	}
+}

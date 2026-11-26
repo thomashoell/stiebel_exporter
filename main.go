@@ -45,6 +45,7 @@ type config struct {
 	setOperatingMode string
 	writeReceiver    uint16
 	dryRun           bool
+	webWrite         bool
 }
 
 func parseFlags(args []string, output io.Writer) (config, error) {
@@ -64,6 +65,8 @@ func parseFlags(args []string, output io.Writer) (config, error) {
 	// the control panel (0x100) writes the operating mode to the manager (candump 2026-11-26)
 	receiver := fs.Uint("write-receiver", uint(stiebel.Manager), "CAN ID the write is sent to (0x480 manager, 0x180 boiler)")
 	fs.BoolVar(&cfg.dryRun, "dry-run", false, "with -set-operating-mode: only print the frame, send nothing")
+	fs.BoolVar(&cfg.webWrite, "web-write", false,
+		"experimental: allow changing the operating mode in the web UI (no authentication yet)")
 
 	if err := fs.Parse(args); err != nil {
 		return cfg, err
@@ -154,8 +157,15 @@ func serve(ctx context.Context, cfg config, logger *slog.Logger, bus *can.Bus, l
 	}
 	bus.SubscribeFunc(exporter.HandleFrame)
 
+	var setter web.ModeSetter
+	if cfg.webWrite {
+		setter = newModeWriter(bus, cfg.writeReceiver, 3*time.Second, 3*time.Second, logger)
+		logger.Warn("the web UI can change the operating mode, without authentication",
+			"receiver", fmt.Sprintf("0x%03X", cfg.writeReceiver))
+	}
+
 	srv := &http.Server{
-		Handler:           newHandler(reg, logger),
+		Handler:           newHandler(reg, logger, setter),
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       15 * time.Second,
 		WriteTimeout:      15 * time.Second,
@@ -203,12 +213,12 @@ func serve(ctx context.Context, cfg config, logger *slog.Logger, bus *can.Bus, l
 	return errors.Join(err, srv.Shutdown(shutdownCtx), bus.Disconnect())
 }
 
-func newHandler(reg *prometheus.Registry, logger *slog.Logger) http.Handler {
+func newHandler(reg *prometheus.Registry, logger *slog.Logger, setter web.ModeSetter) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("GET /metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{
 		ErrorHandling: promhttp.HTTPErrorOnError,
 	}))
-	web.Register(mux, reg, web.Info{Version: gitTag, Commit: gitCommit}, logger)
+	web.Register(mux, reg, web.Info{Version: gitTag, Commit: gitCommit}, logger, setter)
 	return mux
 }
 
