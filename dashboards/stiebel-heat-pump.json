@@ -81,6 +81,27 @@
             5
           ]
         }
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "expr": "stiebel_booster_heater_stages > 0",
+        "hide": false,
+        "iconColor": "#8F3BB8",
+        "name": "Heizstäbe",
+        "step": "1m",
+        "titleFormat": "Heizstäbe",
+        "useValueForTime": false,
+        "filter": {
+          "exclude": true,
+          "ids": [
+            4,
+            5
+          ]
+        }
       }
     ]
   },
@@ -891,7 +912,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 12,
+        "w": 8,
         "x": 0,
         "y": 14
       },
@@ -923,7 +944,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(stiebel_electrical_power_consumption_watt_hours{time_frame=\"total\"})",
+          "expr": "sum(stiebel_electrical_power_consumption_watt_hours{time_frame=\"total\"}) + sum(stiebel_heat_produced_watt_hours{time_frame=\"total\", heat_generator=\"2\"})",
           "instant": true,
           "range": false,
           "format": "time_series",
@@ -934,7 +955,7 @@
       "title": "Stromverbrauch gesamt",
       "transparent": true,
       "type": "stat",
-      "description": "Elektrische Energie seit Inbetriebnahme (Heizen + Warmwasser, Gesamtzähler der WPM). Die WPM aktualisiert ihn einmal am Tag gegen 01:00 Uhr."
+      "description": "Elektrische Energie seit Inbetriebnahme: Verdichter (Gesamtzähler der WPM) plus Heizstäbe (Wärme des 2. Wärmeerzeugers = Strom). Die WPM aktualisiert die Gesamtzähler einmal am Tag gegen 01:00 Uhr."
     },
     {
       "datasource": {
@@ -964,8 +985,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 12,
-        "x": 12,
+        "w": 8,
+        "x": 8,
         "y": 14
       },
       "id": 31,
@@ -996,7 +1017,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(stiebel_electrical_power_consumption_watt_hours{time_frame=\"day\"})",
+          "expr": "sum(stiebel_electrical_power_consumption_watt_hours{time_frame=\"day\"}) + sum(stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"})",
           "instant": true,
           "range": false,
           "format": "time_series",
@@ -1007,7 +1028,101 @@
       "title": "Stromverbrauch heute",
       "transparent": true,
       "type": "stat",
-      "description": "Elektrische Energie seit Mitternacht (Heizen + Warmwasser, Tageszähler der WPM; Reset gegen 00:11 Uhr)."
+      "description": "Elektrische Energie seit Mitternacht: Verdichter plus Heizstäbe (Tageszähler der WPM, stündlich gebucht; Reset gegen 00:11 Uhr)."
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": {
+                  "text": "aus",
+                  "color": "green",
+                  "index": 0
+                },
+                "1": {
+                  "text": "1 von 3",
+                  "color": "#8F3BB8",
+                  "index": 1
+                },
+                "2": {
+                  "text": "2 von 3",
+                  "color": "#8F3BB8",
+                  "index": 2
+                },
+                "3": {
+                  "text": "3 von 3",
+                  "color": "#8F3BB8",
+                  "index": 3
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 14
+      },
+      "id": 32,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.1.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "stiebel_booster_heater_stages",
+          "legendFormat": "Heizstäbe",
+          "refId": "A",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "title": "Heizstäbe",
+      "transparent": true,
+      "type": "stat",
+      "description": "Anzahl der aktiven Heizstäbe (0–3, je ~2,9 kW auf einer Phase); Bits 0x40/0x80 von VERDICHTER."
     },
     {
       "datasource": {
@@ -1108,6 +1223,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Heizstäbe"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8F3BB8"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1148,13 +1278,27 @@
           "legendFormat": "{{component}}",
           "range": true,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": true,
+          "expr": "(clamp_min(sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"}) - sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"} offset 1h), 0) and (sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"}) >= sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"} offset 1h) * 0.5)) or sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"})",
+          "hide": false,
+          "interval": "1h",
+          "legendFormat": "Heizstäbe",
+          "range": true,
+          "refId": "B"
         }
       ],
       "title": "Energieverbrauch",
       "type": "timeseries",
       "timeFrom": "24h",
       "hideTimeOverride": false,
-      "description": "Elektrische Energie pro Stunde aus dem Tageszähler der WPM (Heizen und Warmwasser gestapelt). Die Gesamtzähler aktualisiert die WPM nur einmal am Tag.",
+      "description": "Elektrische Energie pro Stunde (gestapelt): Verdichter für Heizen und Warmwasser aus dem Tageszähler der WPM, dazu die Heizstäbe. Der Stromzähler der WPM enthält die Heizstäbe nicht; ihre Wärme (2. Wärmeerzeuger) entspricht ihrem Stromverbrauch.",
       "interval": "1h"
     },
     {
@@ -1256,6 +1400,21 @@
                 }
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Heizstäbe"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#8F3BB8"
+                }
+              }
+            ]
           }
         ]
       },
@@ -1289,10 +1448,22 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "(clamp_min(sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\"}) - sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\"} offset 1h), 0) and (sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\"}) >= sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\"} offset 1h) * 0.5)) or sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\"})",
+          "expr": "(clamp_min(sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"1\"}) - sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"1\"} offset 1h), 0) and (sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"1\"}) >= sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"1\"} offset 1h) * 0.5)) or sum by (component) (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"1\"})",
           "legendFormat": "{{component}}",
           "range": true,
           "refId": "A",
+          "interval": "1h"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "(clamp_min(sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"}) - sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"} offset 1h), 0) and (sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"}) >= sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"} offset 1h) * 0.5)) or sum (stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"})",
+          "legendFormat": "Heizstäbe",
+          "range": true,
+          "refId": "B",
           "interval": "1h"
         }
       ],
@@ -1300,7 +1471,7 @@
       "type": "timeseries",
       "timeFrom": "24h",
       "hideTimeOverride": false,
-      "description": "Erzeugte Wärme pro Stunde aus dem Tageszähler der WPM (Heizen und Warmwasser gestapelt, inklusive Heizstab). Die Gesamtzähler aktualisiert die WPM nur einmal am Tag.",
+      "description": "Erzeugte Wärme pro Stunde aus den Tageszählern der WPM (gestapelt): Wärmepumpe für Heizen und Warmwasser, dazu die Heizstäbe (2. Wärmeerzeuger).",
       "interval": "1h"
     },
     {
@@ -2152,7 +2323,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (component) (avg_over_time(stiebel_heat_produced_watt_hours{time_frame=\"day\"}[$__range])) / sum by (component) (avg_over_time(stiebel_electrical_power_consumption_watt_hours{time_frame=\"day\"}[$__range]))",
+          "expr": "sum by (component) (avg_over_time(stiebel_heat_produced_watt_hours{time_frame=\"day\"}[$__range])) / (sum by (component) (avg_over_time(stiebel_electrical_power_consumption_watt_hours{time_frame=\"day\"}[$__range])) + sum by (component) (avg_over_time(stiebel_heat_produced_watt_hours{time_frame=\"day\", heat_generator=\"2\"}[$__range])))",
           "hide": false,
           "legendFormat": "{{component}}",
           "range": true,
@@ -2173,7 +2344,7 @@
       ],
       "title": "Arbeitszahl",
       "type": "timeseries",
-      "description": "Arbeitszahl (erzeugte Wärme / elektrische Energie) aus den Tageswerten je Komponente."
+      "description": "Arbeitszahl der Anlage (erzeugte Wärme / elektrische Energie inklusive Heizstäbe) aus den Tageswerten je Komponente."
     }
   ],
   "preload": false,
