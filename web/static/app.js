@@ -5,13 +5,15 @@ const refreshMs = 10000;
 
 function render(data) {
   for (const [key, item] of Object.entries(data.items)) {
-    const el = document.querySelector(`.item[data-key="${CSS.escape(key)}"]`);
-    if (!el) continue;
-    el.querySelector("dd").textContent = item.text;
-    if (item.state) {
-      el.dataset.state = item.state;
-    } else {
-      delete el.dataset.state;
+    // a value can appear twice: in a tile at the top and in its section
+    for (const el of document.querySelectorAll(`[data-key="${CSS.escape(key)}"]`)) {
+      const value = el.querySelector("[data-value]");
+      if (value) value.textContent = item.text;
+      if (item.state) {
+        el.dataset.state = item.state;
+      } else {
+        delete el.dataset.state;
+      }
     }
   }
   document.getElementById("mode").textContent = data.mode || "–";

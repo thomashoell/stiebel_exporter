@@ -9,6 +9,7 @@
   --on: #1a7f37;
   --off: #6e7781;
   --warn: #b35900;
+  --heat: #8250df;
   --banner-bg: #fff4e5;
   --space: 1rem;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -24,6 +25,7 @@
     --on: #3fb950;
     --off: #8b949e;
     --warn: #f0883e;
+    --heat: #b392f0;
     --banner-bg: #3a2a12;
   }
 }
@@ -39,7 +41,7 @@ body {
   line-height: 1.5;
 }
 
-header, main, footer, .banner { max-width: 72rem; margin-inline: auto; }
+header, main, footer, .banner, .hero { max-width: 72rem; margin-inline: auto; }
 
 header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 var(--space); }
 h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
@@ -53,6 +55,26 @@ h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
   border-radius: 0.5rem;
   background: var(--banner-bg);
 }
+
+/* the most important values as large tiles */
+.hero {
+  display: grid;
+  gap: var(--space);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+  margin-top: 0;
+  margin-bottom: var(--space);
+}
+.tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.75rem var(--space);
+}
+.tile dt { color: var(--muted); font-size: 0.875rem; }
+.tile dd { margin: 0; text-align: left; }
+.tile dd[data-value] { font-size: 1.75rem; font-weight: 700; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.tile .sub { color: var(--muted); font-size: 0.875rem; }
+.tile .sub [data-value] { color: var(--text); font-weight: 600; }
 
 main {
   display: grid;
@@ -85,7 +107,8 @@ dt { color: var(--muted); }
 dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
 
 /* state: the text says it, the dot only supports it */
-.item[data-state] dd::before {
+.item[data-state] dd::before,
+.tile[data-state] dd[data-value]::before {
   content: "";
   display: inline-block;
   width: 0.6em;
@@ -95,9 +118,18 @@ dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align
   vertical-align: 0.05em;
   background: var(--off);
 }
-.item[data-state="on"] dd::before { background: var(--on); }
-.item[data-state="warn"] dd::before { background: var(--warn); }
-.item[data-state="warn"] dd { color: var(--warn); }
+.item[data-state="on"] dd::before,
+.tile[data-state="on"] dd[data-value]::before { background: var(--on); }
+/* heat: booster heater running – normal, but expensive */
+.item[data-state="heat"] dd::before,
+.tile[data-state="heat"] dd[data-value]::before { background: var(--heat); }
+.item[data-state="heat"] dd,
+.tile[data-state="heat"] dd[data-value] { color: var(--heat); }
+/* warn: a problem (stale data) */
+.item[data-state="warn"] dd::before,
+.tile[data-state="warn"] dd[data-value]::before { background: var(--warn); }
+.item[data-state="warn"] dd,
+.tile[data-state="warn"] dd[data-value] { color: var(--warn); }
 
 footer { margin-top: calc(var(--space) * 1.5); color: var(--muted); font-size: 0.875rem; }
 footer a { color: inherit; }

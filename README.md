@@ -21,6 +21,7 @@ disable the old `wlp_exporter` service before enabling `stiebel_exporter`.
 | `stiebel_heater_hot_gas_temperature_celsius` | | `HEISSGAS_TEMP` (0x0265) |
 | `stiebel_compressor_modulation_percent` | | `SOLLDREHZAHL_VERDICHTER_2` (0x063D): 0 while standing still (also at the start of a defrost), otherwise ~28–100 |
 | `stiebel_compressor_running` | | bit 0x10 of `VERDICHTER` (0x07A8); also 1 in the reverse-cycle part of a defrost |
+| `stiebel_booster_heater_stages` | | bits 0x40/0x80 of `VERDICHTER` (0x07A8): number of active electric heating elements, 0–3 |
 | `stiebel_heating_flow_setpoint_celsius` | | `KESSELSOLLTEMP` (0x0002) |
 | `stiebel_boiler_tank_setpoint_celsius` | | `SPEICHERSOLLTEMP` (0x0003); not the effective set point, keeps the Komfort value in Eco-Betrieb |
 | `stiebel_boiler_tank_comfort_setpoint_celsius` | | `EINSTELL_SPEICHERSOLLTEMP` (0x0013): hot water set point of Komfortbetrieb |
@@ -58,7 +59,8 @@ the Elster indexes listed in `metrics/testmetrics.go` and exports every answer a
 test_stiebel_register_value{unit="manager",index="0x0074",name="EVU_SPERRE_AKTIV"} 1
 ```
 
-Indexes a unit doesn't know never show up. Names and scaling come from the can_progs table and are not verified:
+Indexes a unit doesn't know never show up. An index that already feeds a regular metric is not requested twice;
+its decoded value is exported as test value in addition (e.g. all bits of a bit field). Names and scaling come from the can_progs table and are not verified:
 compare the values with the heat pump's display, then promote the useful ones to proper `stiebel_*` metrics.
 The test values are polled once per `-test-interval` (each request takes ~50 ms of bus time).
 

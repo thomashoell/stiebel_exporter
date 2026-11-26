@@ -19,12 +19,12 @@ noted) so the history stays traceable.
 | Index | Name | Unit | Meaning on this device |
 |---|---|---|---|
 | 0x0002 | KESSELSOLLTEMP | boiler | heating flow set point (heating curve), °C (dec) |
-| 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C – **not** the effective one: in Eco-Betrieb with an Eco hot water set point of 47 °C it stayed at 48 °C (2026-11-25), probably the Komfort set point (to be confirmed) |
+| 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C – most likely the **effective** one: 10 °C in Bereitschaftsbetrieb, 48 °C (Komfort) in Komfort- and Eco-Betrieb (see investigation 2026-11-26, Eco period of Programmbetrieb still to check) |
 | 0x0013 | EINSTELL_SPEICHERSOLLTEMP | boiler, manager | hot water set point of **Komfortbetrieb**, °C (dec); 48 °C as set on the panel (2026-11-25) |
 | 0x0A06 | EINSTELL_SPEICHERSOLLTEMP2 | boiler, manager | hot water set point of **Eco-Betrieb**, °C (dec); 47 °C as set on the panel (2026-11-25) |
 | 0x0005 | RAUMSOLLTEMP_I | boiler | room comfort set point, °C |
 | 0x000C | AUSSENTEMP | boiler | outdoor temperature, °C |
-| 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code. The WPM offers six programs, can_progs lists six codes in the same order: 0x0000 Notbetrieb, 0x0100 Bereitschaftsbetrieb, 0x0200 Programmbetrieb, 0x0500 Warmwasserbetrieb (assigned by order, not verified); 0x0300 = 768 = **Komfortbetrieb** (verified on the WPM display, can_progs calls it Tagbetrieb); 0x0400 = 1024 = **Eco-Betrieb** (verified 2026-11-25, can_progs: Absenkbetrieb; the heating flow set point dropped from 35 to 32.1 °C, the hot water set point 0x0003 stayed at 48 °C) |
+| 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code; all six programs of the WPM verified (2026-11-25/26): 0x0000 = 0 **Notbetrieb**, 0x0100 = 256 **Bereitschaftsbetrieb**, 0x0200 = 512 **Programmbetrieb**, 0x0300 = 768 **Komfortbetrieb**, 0x0400 = 1024 **Eco-Betrieb**, 0x0500 = 1280 **Warmwasserbetrieb** (can_progs: Notbetrieb, Bereitschaft, Automatik, Tagbetrieb, Absenkbetrieb, Warmwasser). Eco-Betrieb lowered the heating flow set point from 35 to 32.1 °C; Bereitschaftsbetrieb and Warmwasserbetrieb set it to 7.9 °C (frost protection / heating off) |
 | 0x01D2 | PUMPENSTATUS | boiler | bit field, **little endian**: 0x4000 = hot water charging, 0x0100 = same as bit 0x0200 of 0x0061 (see below), 0x1000 and 0x0002 always set |
 | 0x0265 | HEISSGAS_TEMP | heater | hot gas °C: ~100 °C while the compressor runs (up to 113 while charging hot water), decays exponentially towards ~50 °C when it stops – a good plausibility check for the compressor state |
 | 0x0822/0x0823 | VORLAUF/RUECKLAUFISTTEMP_WP_IWS | heater | flow/return measured in the heat pump, °C |
@@ -32,7 +32,7 @@ noted) so the history stays traceable.
 | 0x07A6/0x07A7 | ANZEIGE_HOCH/NIEDERDRUCK | heater | refrigerant pressures, decoded (dec) value ÷ 10 = bar. HD 26–29 bar while heating, 32–37 bar while charging hot water, falls to ~19 bar when the compressor stops; ND 4–9 bar |
 | 0x0061 | ABTAUUNGAKTIV | heater | bit field; bit 0x0200 = **heating cycle active**: set from compressor start to stop, *including* the defrosts inside the cycle (~~defrost phase~~, see investigation 2026-11-24); 0x0100 seen briefly (768) at cycle start |
 | 0x063D | SOLLDREHZAHL_VERDICHTER_2 | heater | **compressor modulation in percent**: 0 while the compressor stands still and during defrosts, otherwise 28–100 (28 % = lowest stage, never above 100). Ramps up to 100 within ~3 min after a start at −4 °C, then modulates down; at 0 °C it stayed ≤ 76 %. Was 0 in the test polls of 2026-11-06/07 (taken while the compressor stood still) |
-| 0x07A8 | VERDICHTER | heater | **bit field**, not a decimal value (the can_progs table says `TypeDecVal`, which divides by 10): 0x08 always set, **0x10 = compressor running**, **0x100 = defrost**. Sequence of every defrost: 0x18 → 0x08 (~1 min stop, presumably switching the 4-way valve) → 0x108 → 0x118 → 0x18 |
+| 0x07A8 | VERDICHTER | heater | **bit field**, not a decimal value (the can_progs table says `TypeDecVal`, which divides by 10): 0x08 always set, **0x10 = compressor running**, **0x40/0x80 = number of active heating elements of the booster heater** (2-bit count, 0–3), **0x100 = defrost**. Sequence of every defrost: 0x18 → 0x08 (~1 min stop, presumably switching the 4-way valve) → 0x108 → 0x118 → 0x18 |
 | 0x0806 | STARTS_ABTAUUNG | heater | defrost counter (~7 per day at −5 °C) |
 | 0x0807 | ZEITDAUER_LETZTE_ABTAUUNG | heater | last defrost duration, seconds assumed (128–232) |
 
@@ -154,3 +154,50 @@ with different scales – what 0x063F is stays **open**. More cycles are needed 
 - `stiebel_heater_defrost_phase` becomes `stiebel_heating_cycle_active` (bit 0x0200 of 0x0061);
 - the alert `HeatPumpCompressorStopped` is based on these metrics (e.g. no heating cycle for longer than the
   usual standstill).
+
+### 2026-11-26: Is the electric booster heater on?
+
+**Trigger:** the grid meter shows peaks of ~12 kW for some minutes, about once a day.
+
+**Observation (2026-11-23 … 26):** every peak falls into a hot water charge (23.11. 23:02–23:22, 24.11. 23:38–23:56,
+26.11. 07:09–07:27), and only then the heat of the 2nd heat generator for hot water rises
+(`stiebel_heat_produced_watt_hours{heat_generator="2",component="water"}`: day counter 0.51 kWh at 23:10 on the 23rd,
+1.57 kWh at 08:10 on the 26th; the charge of the 24th only shows in the total counter, +1 kWh at 00:12, because the
+day counter is reset at ~00:10 before the last hour is booked). Other charges (24.11. 13:26, 25.11. 09:50, 16:37,
+21:19) had no peak and no WE2 heat; WE2 for heating stays 0.
+
+**Conclusion so far:** the booster heater only helps with hot water, and not at every charge. Its energy is
+visible (hourly counter resolution), its on/off state is not.
+
+**Next step:** test poll of 0x01CB LAUFZEIT_2WE, 0x0137 KESSELSOLLTEMP_2WE and the raw values of the bit fields
+0x07A8 VERDICHTER and 0x01D2 PUMPENSTATUS (besides 0x0176 BETRIEBS_STATUS) – compare during the next charge with a
+peak.
+
+**Test in Notbetrieb (2026-11-26 12:40–12:50, compressor off, hot water charge running, PV feeding ~2 kW):**
+
+| Time | Grid meter | 0x07A8 VERDICHTER | 0x0176 BETRIEBS_STATUS | Interpretation |
+|---|---|---|---|---|
+| until 12:40 | ~0.5 kW | 0x18 | 0x4041 | compressor running, hot water charge (0x4000) |
+| 12:40:15 | | 0x08 | 0x5040 | Notbetrieb, compressor off |
+| 12:40:45 | phase C +~3 kW | 0x48 | 0x5040 → | 1 heating element |
+| 12:42:00 | phase A +~3 kW, total ~4 kW | 0x88 | 0x6040 | 2 heating elements |
+| 12:44:15 | phase B +~3 kW, total ~6.75 kW | 0xC8 | 0x7040 | 3 heating elements |
+| 12:50:00 (Bereitschaftsbetrieb) | ~0 kW | 0x08 | 0x4000 | all off |
+
+- **0x07A8 bits 0x40/0x80** are the **number of active heating elements** as a 2-bit count (0x40 = 1, 0x80 = 2,
+  0xC0 = 3), not one bit per element; the WPM adds one element (one phase each, ~2.9 kW, ~8.7 kW in total) about
+  every 1.5 min. **0x0176 bits 0x1000/0x2000** count the same (0x1000, 0x2000, 0x3000).
+- 0x01D2 PUMPENSTATUS sets bit 0x0004 in Notbetrieb.
+- WE2 counters and 0x01CB LAUFZEIT_2WE (452 from the manager) did not change within 10 min (hourly booking).
+  0x0137 KESSELSOLLTEMP_2WE doesn't answer.
+- The nightly ~12 kW peaks are 3 heating elements plus compressor and household.
+- Exported as `stiebel_booster_heater_stages` (0–3) since 2026-11-26; shown in the web UI ("Heizstäbe").
+
+### 2026-11-26: SPEICHERSOLLTEMP (0x0003) is the effective hot water set point after all
+
+In Bereitschaftsbetrieb 0x0003 dropped to **10 °C** (frost protection) and came back to 48 °C in Programmbetrieb –
+it follows the operating mode. That it stayed at 48 °C (the Komfort value) in Eco-Betrieb with an Eco hot water set
+point of 47 °C rather means: **Eco-Betrieb only lowers the heating, hot water stays at Komfort**; the Eco hot water
+set point (0x0A06) probably applies in the Eco periods of Programmbetrieb. **Open:** confirm during an Eco period
+of Programmbetrieb (0x0003 should show 47 °C then). If confirmed, the "effective set point" logic of the web UI and
+the dashboard (Eco value in Eco-Betrieb) is wrong and 0x0003 should be shown instead.
