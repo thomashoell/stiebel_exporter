@@ -26,6 +26,13 @@ var testIndexes = []uint16{
 	// KESSELSOLLTEMP_2WE doesn't answer. Still watched: the operating hours and the bit field of the pumps.
 	0x01CB, // LAUFZEIT_2WE
 	0x01D2, // PUMPENSTATUS (regular metric uses bit 0x4000; raw value, little endian)
+	// 2026-11-26: which devices are on the bus? The panel lists WPM3 390-13, FES 417-07, MFG 18, WP1 446-04 and the
+	// heat pump type WPL 17 ACS classic – look for software number/version, device ID and type per unit.
+	0x000B, // GERAETE_ID
+	0x0199, // SOFTWARE_NUMMER
+	0x019A, // SOFTWARE_VERSION
+	0x0148, // GERAETE_KENNUNG
+	0x019C, // INFO_TYP
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
