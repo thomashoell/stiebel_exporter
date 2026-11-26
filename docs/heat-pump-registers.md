@@ -234,6 +234,19 @@ Settings on the WPM (Thomas, 2026-11-26):
 | Delay | | 60 min |
 
 Heating: Hauptmenü › Einstellungen › Heizen › Elektrische Nacherwärmung (breadcrumb truncated on the display).
+
+Registers (test poll 2026-11-26, boiler and manager answer identically):
+
+| Index | can_progs name | Value | Setting |
+|---|---|---|---|
+| 0x01AC | BIVALENTPARALLELTEMPERATUR_HZG | −5.0 | bivalence temperature heating ✓ |
+| 0x01AD | BIVALENTPARALLELTEMPERATUR_WW | −2.0 | bivalence temperature hot water ✓ |
+| 0x01AE | BIVALENZALTERNATIVTEMPERATUR_HZG | −20.0 | lower operating limit heating ✓ |
+| 0x01AF | BIVALENZALTERNATIVTEMPERATUR_WW | −20.0 | lower operating limit hot water ✓ |
+| 0x05A0 | NHZ_ANZAHL_STUFEN | 60 | the **delay** (60 min), not the number of stages – the table is shifted by one here; **open:** 0x059F for the stages |
+
+No answer: 0x05A1 NHZ_VERZOEGERUNG, 0x0589 NHZ_VERZOEGERUNG_WW, 0x058B NHZ_ANZAHL_STUFEN_WW, 0x05A8/0x05A9
+LAUFZEIT_NHZ_WW/_HEIZEN.
 Anti-legionella protection is active.
 
 Heating: below −5 °C the heating elements may help, but only after the delay of 60 min. Consistent with the data:

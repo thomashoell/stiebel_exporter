@@ -46,16 +46,16 @@ var testIndexes = []uint16{
 	0xFE4C, // 18
 	// 2026-11-26: booster heater settings, compared with the panel (Einstellungen › Heizen/Warmwasser › Elektrische
 	// Nacherwärmung): bivalence −5 °C heating / −2 °C hot water, lower limit −20 °C, 3 stages, delay 60 min
-	0x01AC, // BIVALENTPARALLELTEMPERATUR_HZG (expected −5.0)
-	0x01AD, // BIVALENTPARALLELTEMPERATUR_WW (expected −2.0)
-	0x01AE, // BIVALENZALTERNATIVTEMPERATUR_HZG (expected −20.0?)
-	0x01AF, // BIVALENZALTERNATIVTEMPERATUR_WW (expected −20.0?)
-	0x05A0, // NHZ_ANZAHL_STUFEN (expected 3)
-	0x05A1, // NHZ_VERZOEGERUNG (expected 60)
-	0x058B, // NHZ_ANZAHL_STUFEN_WW
-	0x0589, // NHZ_VERZOEGERUNG_WW
-	0x05A8, // LAUFZEIT_NHZ_WW
-	0x05A9, // LAUFZEIT_NHZ_HEIZEN
+	// Verified 2026-11-26: 0x01AC –5, 0x01AD –2, 0x01AE/0x01AF –20 (boiler and manager); 0x05A0 answers 60 = the
+	// delay, not the number of stages (the table is shifted by one here); 0x05A1, 0x0589, 0x058B, 0x05A8 and
+	// 0x05A9 don't answer.
+	0x01AC, // BIVALENTPARALLELTEMPERATUR_HZG
+	0x01AD, // BIVALENTPARALLELTEMPERATUR_WW
+	0x01AE, // BIVALENZALTERNATIVTEMPERATUR_HZG
+	0x01AF, // BIVALENZALTERNATIVTEMPERATUR_WW
+	0x05A0, // "NHZ_ANZAHL_STUFEN", answers 60 = NHZ delay heating (min)
+	0x059F, // "FUSSPUNKT_HEIZKURVE" – the number of stages (3) if the table is shifted by one?
+	0x05A2, // "NHZ_LEISTUNG1"
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
