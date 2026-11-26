@@ -105,10 +105,8 @@ func TestValues(t *testing.T) {
 		"age_heater":       "vor 2 min",
 	}
 	got := map[string]value{}
-	for _, sec := range sections {
-		for _, it := range sec.items {
-			got[it.key] = it.evaluate(s)
-		}
+	for _, it := range allItems() {
+		got[it.key] = it.evaluate(s)
 	}
 	for key, text := range want {
 		if got[key].Text != text {
@@ -160,11 +158,9 @@ func TestNoDataBeforeFirstResponse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, sec := range sections {
-		for _, it := range sec.items {
-			if v := it.evaluate(s); v.Value != nil || v.Text != "–" {
-				t.Errorf("%s: got %+v before the first response", it.key, v)
-			}
+	for _, it := range allItems() {
+		if v := it.evaluate(s); v.Value != nil || v.Text != "–" {
+			t.Errorf("%s: got %+v before the first response", it.key, v)
 		}
 	}
 }
@@ -182,6 +178,7 @@ func TestPage(t *testing.T) {
 		`href="/metrics"`,
 		`/static/app.js?v=abc1234`,
 		`<div class="tile" data-key="booster" data-state="heat">`,
+		`data-key="cycle"`,
 		`<dd class="sub" data-key="tank_setpoint">Soll <span data-value>48,0 °C</span></dd>`,
 	} {
 		if !strings.Contains(body, want) {

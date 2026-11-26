@@ -52,16 +52,17 @@ const (
 	heat       = "stiebel_heat_produced_watt_hours"
 )
 
-// sections defines what the UI shows; the labels follow the Grafana dashboard.
+// overview holds the values of the tiles at the top (see hero); they have no section of their own.
+var overview = []item{
+	{"outdoor", "Außentemperatur", gauge("boiler", "stiebel_outdoor_temperature_celsius"), celsius},
+	{"tank", "Warmwasser", gauge("boiler", "stiebel_boiler_tank_temperature_celsius"), celsius},
+	{"compressor", "Verdichter", (*snapshot).compressorState, compressorText},
+	{"modulation", "Modulation", gauge("heater", "stiebel_compressor_modulation_percent"), percent},
+	{"booster", "Heizstäbe", gauge("heater", "stiebel_booster_heater_stages"), stages},
+}
+
+// sections defines the cards below the tiles; the labels follow the Grafana dashboard.
 var sections = []section{
-	{"Übersicht", []item{
-		{"outdoor", "Außentemperatur", gauge("boiler", "stiebel_outdoor_temperature_celsius"), celsius},
-		{"tank", "Warmwasser", gauge("boiler", "stiebel_boiler_tank_temperature_celsius"), celsius},
-		{"compressor", "Verdichter", (*snapshot).compressorState, compressorText},
-		{"modulation", "Modulation", gauge("heater", "stiebel_compressor_modulation_percent"), percent},
-		{"cycle", "Heizzyklus", gauge("heater", "stiebel_heating_cycle_active"), yesNo},
-		{"booster", "Heizstäbe", gauge("heater", "stiebel_booster_heater_stages"), stages},
-	}},
 	{"Heizkreis", []item{
 		{"flow", "Vorlauf", gauge("boiler", "stiebel_boiler_flow_temperature_celsius"), celsius},
 		{"return", "Rücklauf", gauge("boiler", "stiebel_boiler_return_temperature_celsius"), celsius},
@@ -77,6 +78,7 @@ var sections = []section{
 		{"hot_water_charging", "Ladung aktiv", gauge("boiler", "stiebel_hot_water_charging"), yesNo},
 	}},
 	{"Kältekreis", []item{
+		{"cycle", "Heizzyklus", gauge("heater", "stiebel_heating_cycle_active"), yesNo},
 		{"hot_gas", "Heißgas", gauge("heater", "stiebel_heater_hot_gas_temperature_celsius"), celsius},
 		{"high_pressure", "Hochdruck", gauge("heater", "stiebel_heater_high_pressure_bar"), bar},
 		{"low_pressure", "Niederdruck", gauge("heater", "stiebel_heater_low_pressure_bar"), bar},
@@ -180,13 +182,20 @@ type pageData struct {
 	Sections []pageSection
 }
 
+// allItems returns the items of the tiles and of all sections.
+func allItems() []item {
+	items := append([]item{}, overview...)
+	for _, sec := range sections {
+		items = append(items, sec.items...)
+	}
+	return items
+}
+
 // itemByKey returns the item definition with the key.
 func itemByKey(key string) (item, bool) {
-	for _, sec := range sections {
-		for _, it := range sec.items {
-			if it.key == key {
-				return it, true
-			}
+	for _, it := range allItems() {
+		if it.key == key {
+			return it, true
 		}
 	}
 	return item{}, false
@@ -240,10 +249,8 @@ func (h *handler) serveValues(w http.ResponseWriter, _ *http.Request) {
 		return
 	}
 	resp := valuesResponse{Time: s.now, Mode: s.mode, Items: map[string]value{}}
-	for _, sec := range sections {
-		for _, it := range sec.items {
-			resp.Items[it.key] = it.evaluate(s)
-		}
+	for _, it := range allItems() {
+		resp.Items[it.key] = it.evaluate(s)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
