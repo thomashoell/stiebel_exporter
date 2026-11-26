@@ -108,12 +108,13 @@ sudo systemctl daemon-reload && sudo systemctl enable --now stiebel_exporter
 ### Experimental: setting the operating mode
 
 ```
-stiebel_exporter -set-operating-mode Eco-Betrieb [-write-receiver 0x180] [-dry-run]
+stiebel_exporter -set-operating-mode Eco-Betrieb [-write-receiver 0x480] [-dry-run]
 ```
 
 Writes the operating mode once (`Bereitschaftsbetrieb`, `Programmbetrieb`, `Komfortbetrieb`, `Eco-Betrieb`,
 `Warmwasserbetrieb`; not `Notbetrieb`), reads it back before and after, prints both and exits non-zero if the heat
-pump didn't take it. `-dry-run` only prints the frame. It can run while the exporter is running. This is a first
+pump didn't take it. `-dry-run` only prints the frame. Like the control panel, it writes to the manager (0x480) by default and reads
+the mode back from the same address. It can run while the exporter is running. This is a first
 test of write support, see [docs/roadmap.md](docs/roadmap.md) – it changes the same setting as the control panel.
 
 ## Web UI

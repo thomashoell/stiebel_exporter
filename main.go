@@ -61,7 +61,8 @@ func parseFlags(args []string, output io.Writer) (config, error) {
 	fs.DurationVar(&cfg.testInterval, "test-interval", time.Minute, "interval between two polls of the test values")
 	fs.StringVar(&cfg.setOperatingMode, "set-operating-mode", "",
 		"experimental: set the operating mode once (e.g. Eco-Betrieb), read it back and exit")
-	receiver := fs.Uint("write-receiver", uint(stiebel.Kessel), "CAN ID the write is sent to (0x180 boiler, 0x480 manager)")
+	// the control panel (0x100) writes the operating mode to the manager (candump 2026-11-26)
+	receiver := fs.Uint("write-receiver", uint(stiebel.Manager), "CAN ID the write is sent to (0x480 manager, 0x180 boiler)")
 	fs.BoolVar(&cfg.dryRun, "dry-run", false, "with -set-operating-mode: only print the frame, send nothing")
 
 	if err := fs.Parse(args); err != nil {

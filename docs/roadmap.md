@@ -22,8 +22,10 @@ dashboard (temperatures, set points, compressor state, pressures, hot water char
 Use case: heat the hot water tank when there is enough PV surplus, so it doesn't have to happen at night.
 
 - First write test (2026-11-26): `-set-operating-mode` (write.go) writes PROGRAMMSCHALTER (0x0112) once and reads
-  it back; `stiebel.WriteFrame` builds the write telegram. **Open:** does the WPM accept it, and on which address
-  (0x180 or 0x480)?
+  it back; `stiebel.WriteFrame` builds the write telegram. The control panel writes it to the **manager (0x480)**: candump
+  of a change Komfort → Eco → Komfort on the panel shows `100#9000FA01120400` (0x100 writes 0x0400 to 0x480), then
+  the manager forwards it (`480#2000FA01120400` to 0x100, `480#A079FA01120400` to 0x519) and the boiler (0x180)
+  answers the new value about 5 s later. **Open:** does the WPM accept the same write from 0x680?
 - Candidates: `SPEICHERSOLLTEMP` (0x0003) to trigger hot water charging; possibly `PROGRAMMSCHALTER` (0x0112).
 - A CAN write changes the same parameter as the control panel (ComfortSoft and the ISG use the same path), but it
   is not necessarily equivalent to a change on the panel:
