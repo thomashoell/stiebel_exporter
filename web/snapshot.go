@@ -121,6 +121,13 @@ func duration(seconds float64) (string, string) {
 	return fmt.Sprintf("%d:%02d min", s/60, s%60), ""
 }
 
+func stages(v float64) (string, string) {
+	if v == 0 {
+		return "aus", "off"
+	}
+	return number(v, 0) + " von 3", "warn"
+}
+
 func yesNo(v float64) (string, string) {
 	if v != 0 {
 		return "ja", "on"

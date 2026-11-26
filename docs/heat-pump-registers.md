@@ -32,7 +32,7 @@ noted) so the history stays traceable.
 | 0x07A6/0x07A7 | ANZEIGE_HOCH/NIEDERDRUCK | heater | refrigerant pressures, decoded (dec) value ÷ 10 = bar. HD 26–29 bar while heating, 32–37 bar while charging hot water, falls to ~19 bar when the compressor stops; ND 4–9 bar |
 | 0x0061 | ABTAUUNGAKTIV | heater | bit field; bit 0x0200 = **heating cycle active**: set from compressor start to stop, *including* the defrosts inside the cycle (~~defrost phase~~, see investigation 2026-11-24); 0x0100 seen briefly (768) at cycle start |
 | 0x063D | SOLLDREHZAHL_VERDICHTER_2 | heater | **compressor modulation in percent**: 0 while the compressor stands still and during defrosts, otherwise 28–100 (28 % = lowest stage, never above 100). Ramps up to 100 within ~3 min after a start at −4 °C, then modulates down; at 0 °C it stayed ≤ 76 %. Was 0 in the test polls of 2026-11-06/07 (taken while the compressor stood still) |
-| 0x07A8 | VERDICHTER | heater | **bit field**, not a decimal value (the can_progs table says `TypeDecVal`, which divides by 10): 0x08 always set, **0x10 = compressor running**, **0x100 = defrost**. Sequence of every defrost: 0x18 → 0x08 (~1 min stop, presumably switching the 4-way valve) → 0x108 → 0x118 → 0x18 |
+| 0x07A8 | VERDICHTER | heater | **bit field**, not a decimal value (the can_progs table says `TypeDecVal`, which divides by 10): 0x08 always set, **0x10 = compressor running**, **0x40/0x80 = number of active heating elements of the booster heater** (2-bit count, 0–3), **0x100 = defrost**. Sequence of every defrost: 0x18 → 0x08 (~1 min stop, presumably switching the 4-way valve) → 0x108 → 0x118 → 0x18 |
 | 0x0806 | STARTS_ABTAUUNG | heater | defrost counter (~7 per day at −5 °C) |
 | 0x0807 | ZEITDAUER_LETZTE_ABTAUUNG | heater | last defrost duration, seconds assumed (128–232) |
 
@@ -191,6 +191,7 @@ peak.
 - WE2 counters and 0x01CB LAUFZEIT_2WE (452 from the manager) did not change within 10 min (hourly booking).
   0x0137 KESSELSOLLTEMP_2WE doesn't answer.
 - The nightly ~12 kW peaks are 3 heating elements plus compressor and household.
+- Exported as `stiebel_booster_heater_stages` (0–3) since 2026-11-26; shown in the web UI ("Heizstäbe").
 
 ### 2026-11-26: SPEICHERSOLLTEMP (0x0003) is the effective hot water set point after all
 

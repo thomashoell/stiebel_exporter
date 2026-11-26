@@ -60,6 +60,7 @@ var sections = []section{
 		{"compressor", "Verdichter", (*snapshot).compressorState, compressorText},
 		{"modulation", "Modulation", gauge("heater", "stiebel_compressor_modulation_percent"), percent},
 		{"cycle", "Heizzyklus", gauge("heater", "stiebel_heating_cycle_active"), yesNo},
+		{"booster", "Heizstäbe", gauge("heater", "stiebel_booster_heater_stages"), stages},
 	}},
 	{"Heizkreis", []item{
 		{"flow", "Vorlauf", gauge("boiler", "stiebel_boiler_flow_temperature_celsius"), celsius},

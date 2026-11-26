@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"math"
+	"math/bits"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -35,6 +36,7 @@ type gauges struct {
 	heatProduced            *prometheus.GaugeVec
 	compressorModulation    prometheus.Gauge
 	compressorRunning       prometheus.Gauge
+	boosterHeaterStages     prometheus.Gauge
 
 	heatingFlowSetpoint     prometheus.Gauge
 	tankSetpoint            prometheus.Gauge
@@ -105,6 +107,12 @@ func newGauges() *gauges {
 			Namespace: namespace,
 			Name:      "compressor_running",
 			Help:      "1 while the compressor runs (bit 0x10 of VERDICHTER), including the reverse-cycle part of a defrost.",
+		}),
+		boosterHeaterStages: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "booster_heater_stages",
+			Help: "Number of active electric heating elements of the booster heater (bits 0x40/0x80 of VERDICHTER as " +
+				"a 2-bit count, 0-3; one element per phase, ~2.9 kW each on the reference device).",
 		}),
 
 		heatingFlowSetpoint: prometheus.NewGauge(prometheus.GaugeOpts{
@@ -214,6 +222,7 @@ func (g *gauges) collectors() []prometheus.Collector {
 		g.heatProduced,
 		g.compressorModulation,
 		g.compressorRunning,
+		g.boosterHeaterStages,
 		g.heatingFlowSetpoint,
 		g.tankSetpoint,
 		g.tankComfortSetpoint,
@@ -314,8 +323,12 @@ func newUnits(g *gauges) []*unit {
 		// SOLLDREHZAHL_VERDICHTER_2; ISTDREHZAHL_VERDICHTER_1/2 (0x063E/0x063F) are not the compressor speed on a
 		// WPM, see docs/heat-pump-registers.md
 		indexSetter{0x063D, set(g.compressorModulation)},
-		// VERDICHTER, bit field: 0x10 = compressor running, 0x100 = defrost
-		indexSetter{0x07A8, setAll(setBit(g.compressorRunning, 0x0010), setBit(g.defrostActive, 0x0100))},
+		// VERDICHTER, bit field: 0x10 = compressor running, 0x40/0x80 = number of heating elements, 0x100 = defrost
+		indexSetter{0x07A8, setAll(
+			setBit(g.compressorRunning, 0x0010),
+			setBits(g.boosterHeaterStages, 0x00C0),
+			setBit(g.defrostActive, 0x0100),
+		)},
 		indexSetter{0x0265, set(g.hotGasTemperature)}, // HEISSGAS_TEMP
 	)
 	heater.add(true,
@@ -352,6 +365,14 @@ func setAll(setters ...setter) setter {
 		for _, s := range setters {
 			s(v)
 		}
+	}
+}
+
+// setBits sets g to the bits in mask of the 16 bit register value, shifted down to start at bit 0.
+func setBits(g prometheus.Gauge, mask uint16) setter {
+	shift := bits.TrailingZeros16(mask)
+	return func(v float64) {
+		g.Set(float64(uint16(int16(v)) & mask >> shift)) //nolint:gosec // the decoded value is a 16 bit register
 	}
 }
 

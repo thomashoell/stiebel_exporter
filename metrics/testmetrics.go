@@ -22,11 +22,9 @@ var testIndexes = []uint16{
 	0x033D, // INTEGRAL_REGELABWEICHUNG
 	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)
 	0x027E, // WW_ECO
-	// 2026-11-26: is the electric booster heater (2. Wärmeerzeuger) on? It heats hot water at some charges
-	// (12 kW peaks at the meter, WAERMEERTRAG_2WE_WW rises); look for a register or bit that changes then.
+	// 2026-11-26: booster heater – bits 0x40/0x80 of 0x07A8 became stiebel_booster_heater_stages; 0x0137
+	// KESSELSOLLTEMP_2WE doesn't answer. Still watched: the operating hours and the bit field of the pumps.
 	0x01CB, // LAUFZEIT_2WE
-	0x0137, // KESSELSOLLTEMP_2WE
-	0x07A8, // VERDICHTER (regular metrics use bits 0x10/0x100; raw value for the other bits)
 	0x01D2, // PUMPENSTATUS (regular metric uses bit 0x4000; raw value, little endian)
 }
 
