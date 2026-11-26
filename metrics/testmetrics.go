@@ -22,6 +22,12 @@ var testIndexes = []uint16{
 	0x033D, // INTEGRAL_REGELABWEICHUNG
 	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)
 	0x027E, // WW_ECO
+	// 2026-11-26: is the electric booster heater (2. Wärmeerzeuger) on? It heats hot water at some charges
+	// (12 kW peaks at the meter, WAERMEERTRAG_2WE_WW rises); look for a register or bit that changes then.
+	0x01CB, // LAUFZEIT_2WE
+	0x0137, // KESSELSOLLTEMP_2WE
+	0x07A8, // VERDICHTER (regular metrics use bits 0x10/0x100; raw value for the other bits)
+	0x01D2, // PUMPENSTATUS (regular metric uses bit 0x4000; raw value, little endian)
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
@@ -35,20 +41,23 @@ func newTestValues() *prometheus.GaugeVec {
 	}, []string{"unit", "index", "name"})
 }
 
-// addTestIndexes registers setters for the test indexes the unit doesn't export already
-// and adds them to the unit's test poll list.
+// addTestIndexes registers setters for the test indexes and adds the ones the unit doesn't export already to its
+// test poll list. Indexes of regular metrics are not polled twice; their decoded value is exported in addition.
 func (u *unit) addTestIndexes(values *prometheus.GaugeVec) {
 	for _, index := range testIndexes {
-		if _, exported := u.setters[index]; exported {
-			continue
-		}
 		name := ""
 		if r := stiebel.Reading(index); r != nil {
 			name = r.Name
 		}
 		labels := []string{u.name, formatIndex(index), name}
 		// the series is created with the first value, so indexes a unit doesn't know never show up
-		u.setters[index] = func(v float64) { values.WithLabelValues(labels...).Set(v) }
+		test := func(v float64) { values.WithLabelValues(labels...).Set(v) }
+		if regular, exported := u.setters[index]; exported {
+			// already polled for a regular metric: also export the decoded value (e.g. all bits of a bit field)
+			u.setters[index] = setAll(regular, test)
+			continue
+		}
+		u.setters[index] = test
 		u.testPolled = append(u.testPolled, index)
 	}
 }

@@ -58,7 +58,8 @@ the Elster indexes listed in `metrics/testmetrics.go` and exports every answer a
 test_stiebel_register_value{unit="manager",index="0x0074",name="EVU_SPERRE_AKTIV"} 1
 ```
 
-Indexes a unit doesn't know never show up. Names and scaling come from the can_progs table and are not verified:
+Indexes a unit doesn't know never show up. An index that already feeds a regular metric is not requested twice;
+its decoded value is exported as test value in addition (e.g. all bits of a bit field). Names and scaling come from the can_progs table and are not verified:
 compare the values with the heat pump's display, then promote the useful ones to proper `stiebel_*` metrics.
 The test values are polled once per `-test-interval` (each request takes ~50 ms of bus time).
 

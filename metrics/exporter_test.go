@@ -346,7 +346,8 @@ func TestNewFailsOnDuplicateRegistration(t *testing.T) {
 func TestTestMetrics(t *testing.T) {
 	bus := &fakeBus{}
 	reg := prometheus.NewRegistry()
-	// 0x07A6 is exported by the heater, so it is only requested as test index from the boiler and the manager
+	// 0x07A6 is a regular metric of the heater: test-polled only from the boiler and the manager, but its decoded
+	// value from the heater is a test series too
 	defer func(saved []uint16) { testIndexes = saved }(testIndexes)
 	testIndexes = []uint16{0x0074, 0x07A6, 0x01DA}
 
@@ -365,10 +366,11 @@ func TestTestMetrics(t *testing.T) {
 		t.Errorf("test poll sent %d requests, want %d", got, want)
 	}
 
-	e.HandleFrame(response(stiebel.Manager, 0x0074, 1))     // EVU_SPERRE_AKTIV, TypeNone
-	e.HandleFrame(response(stiebel.Kessel, 0x07A6, 1861))   // ANZEIGE_HOCHDRUCK, TypeDecVal
-	e.HandleFrame(response(stiebel.Kessel, 0x01DA, 0x8000)) // VOLUMENSTROM, no value
-	e.HandleFrame(response(stiebel.Kessel, 0x000C, 100))    // regular metric
+	e.HandleFrame(response(stiebel.Manager, 0x0074, 1))      // EVU_SPERRE_AKTIV, TypeNone
+	e.HandleFrame(response(stiebel.Kessel, 0x07A6, 1861))    // ANZEIGE_HOCHDRUCK, TypeDecVal
+	e.HandleFrame(response(stiebel.Heizmodul, 0x07A6, 1861)) // regular metric of the heater
+	e.HandleFrame(response(stiebel.Kessel, 0x01DA, 0x8000))  // VOLUMENSTROM, no value
+	e.HandleFrame(response(stiebel.Kessel, 0x000C, 100))     // regular metric
 
 	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "test_stiebel_register_value")
 	if err != nil {
@@ -377,6 +379,7 @@ func TestTestMetrics(t *testing.T) {
 	for _, want := range []string{
 		`test_stiebel_register_value{index="0x0074",name="EVU_SPERRE_AKTIV",unit="manager"} 1`,
 		`test_stiebel_register_value{index="0x07A6",name="ANZEIGE_HOCHDRUCK",unit="boiler"} 186.1`,
+		`test_stiebel_register_value{index="0x07A6",name="ANZEIGE_HOCHDRUCK",unit="heater"} 186.1`,
 	} {
 		if !strings.Contains(string(got), want+"\n") {
 			t.Errorf("expected %q in\n%s", want, got)
@@ -384,6 +387,9 @@ func TestTestMetrics(t *testing.T) {
 	}
 	if strings.Contains(string(got), "VOLUMENSTROM") || strings.Contains(string(got), "AUSSENTEMP") {
 		t.Errorf("unexpected series in\n%s", got)
+	}
+	if v := testutil.ToFloat64(e.gauges.highPressure); v != 18.61 {
+		t.Errorf("high pressure = %v, want 18.61 (regular metric must still be set)", v)
 	}
 	if v := testutil.ToFloat64(e.gauges.outdoorTemperature); v != 10 {
 		t.Errorf("outdoor temperature = %v, want 10", v)

@@ -154,3 +154,21 @@ with different scales – what 0x063F is stays **open**. More cycles are needed 
 - `stiebel_heater_defrost_phase` becomes `stiebel_heating_cycle_active` (bit 0x0200 of 0x0061);
 - the alert `HeatPumpCompressorStopped` is based on these metrics (e.g. no heating cycle for longer than the
   usual standstill).
+
+### 2026-11-26: Is the electric booster heater on?
+
+**Trigger:** the grid meter shows peaks of ~12 kW for some minutes, about once a day.
+
+**Observation (2026-11-23 … 26):** every peak falls into a hot water charge (23.11. 23:02–23:22, 24.11. 23:38–23:56,
+26.11. 07:09–07:27), and only then the heat of the 2nd heat generator for hot water rises
+(`stiebel_heat_produced_watt_hours{heat_generator="2",component="water"}`: day counter 0.51 kWh at 23:10 on the 23rd,
+1.57 kWh at 08:10 on the 26th; the charge of the 24th only shows in the total counter, +1 kWh at 00:12, because the
+day counter is reset at ~00:10 before the last hour is booked). Other charges (24.11. 13:26, 25.11. 09:50, 16:37,
+21:19) had no peak and no WE2 heat; WE2 for heating stays 0.
+
+**Conclusion so far:** the booster heater only helps with hot water, and not at every charge. Its energy is
+visible (hourly counter resolution), its on/off state is not.
+
+**Next step:** test poll of 0x01CB LAUFZEIT_2WE, 0x0137 KESSELSOLLTEMP_2WE and the raw values of the bit fields
+0x07A8 VERDICHTER and 0x01D2 PUMPENSTATUS (besides 0x0176 BETRIEBS_STATUS) – compare during the next charge with a
+peak.
