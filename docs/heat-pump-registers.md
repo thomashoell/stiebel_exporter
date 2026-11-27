@@ -27,8 +27,9 @@ noted) so the history stays traceable.
   0xFE07 2.8 vs. 1.9 °C outdoor at the boiler; 0xFE09 21.9; 0xFE4C 18. No mixer circuit, buffer tank or room
   sensor known in the installation (Thomas). The boiler's outdoor temperature (0x000C) comes from the sensor on
   the house wall at ~2.5 m; 0xFE07 could be a separate sensor at the heat pump itself (Thomas) – which suggests
-  0x700 might rather be the outdoor unit's (inverter) controller than the MFG. **Open:** compare the 0x700 values
-  over heating cycles and a hot water charge. 0x100 is the control panel (below).
+  0x700 might rather be the outdoor unit's (inverter) controller than the MFG. Superseded by one day of data:
+  0xFE07 is no temperature, 0x700 reports flow/return, diverter valve and heating elements (investigation
+  2026-11-27). 0x100 is the control panel (below).
 - **0x100 is the control panel** (most likely the FES in the list of bus participants): when the operating mode is
   changed on the panel, 0x100 writes PROGRAMMSCHALTER to the manager (`100#9000FA01120400` = write 0x0112 = 0x0400
   to 0x480), the manager passes it on to 0x100 and 0x519 (0x?19 look like group addresses), and the boiler reports
@@ -243,7 +244,8 @@ Registers (test poll 2026-11-26, boiler and manager answer identically):
 | 0x01AD | BIVALENTPARALLELTEMPERATUR_WW | −2.0 | bivalence temperature hot water ✓ |
 | 0x01AE | BIVALENZALTERNATIVTEMPERATUR_HZG | −20.0 | lower operating limit heating ✓ |
 | 0x01AF | BIVALENZALTERNATIVTEMPERATUR_WW | −20.0 | lower operating limit hot water ✓ |
-| 0x05A0 | NHZ_ANZAHL_STUFEN | 60 | the **delay** (60 min), not the number of stages – the table is shifted by one here; **open:** 0x059F for the stages |
+| 0x05A0 | NHZ_ANZAHL_STUFEN | 60 | the **delay** (60 min), not the number of stages – the table is shifted by one here |
+| 0x059F | FUSSPUNKT_HEIZKURVE | 3 | the **number of stages** (3) – confirms the shift; 0x05A2 doesn't answer |
 
 No answer: 0x05A1 NHZ_VERZOEGERUNG, 0x0589 NHZ_VERZOEGERUNG_WW, 0x058B NHZ_ANZAHL_STUFEN_WW, 0x05A8/0x05A9
 LAUFZEIT_NHZ_WW/_HEIZEN.
@@ -272,3 +274,35 @@ the tank sensor's zone. A trigger depending on the drawn volume (Thomas) is poss
 no flow meter for hot water – it could only estimate the draw from the charges or the temperature drop.
 **Open:** watch for a run (tank > 55 °C or heating elements without a cold start) over
 the next weeks.
+
+### 2026-11-27: What does 0x700 send? Test registers after one day
+
+24 h of test values (1-minute steps) correlated with the known metrics; the 0x700 values divided by 10:
+
+| Index (0x700) | Range (raw) | Behaviour | Interpretation |
+|---|---|---|---|
+| 0xFDF5 | 225–624 | equals the boiler flow temperature (r = 1.00, mean deviation 0.1 K) | **flow temperature** (copy) |
+| 0xFDF3 | 227–573 | follows the boiler flow (r = 0.99, 0.8 K) | a second flow temperature (sensor or smoothed value) |
+| 0xFDF4 | 276–451 | follows the heat pump return (r = 0.84, 2.4 K) | probably a **return temperature** |
+| 0xFE07 | 0–42 | 0 while the heating cycle is off, 25–35 while heating or charging hot water | **not** an outdoor temperature (the first value 2.8 was a coincidence); looks like a **flow rate** (unit unknown) |
+| 0xFE09 | 200–220 | 20.0–20.5 in standby, up to 22.0 while running | a temperature near the electronics/hydraulics (open) |
+| 0xFE1B | 0–100 | 100 in standby, 0 during hot water charges and defrosts, 0–74 while heating | a valve or pump in % (open) |
+| 0xFE1D | 1 / 98–100 | 1 while heating or in standby, **98 during every hot water charge** | **diverter valve** heating/hot water in % |
+| 0xFE1E | 0, 1, 3, 7 | 1/3/7 exactly with booster heater stages 1/2/3 | **heating elements as a bit mask** (one bit per element) |
+| 0xFE4C | 18 | constant | open |
+
+0x700 thus knows the flow and return, the diverter valve and the single heating elements – rather the hydraulic
+part (heat module / internal controller) than the outdoor unit or the MFG. Still listen-only: it only answers the
+manager.
+
+Other test registers:
+
+- LAUFZEIT_2WE (0x01CB, manager) = 452 → 453 within the day – a run-time counter of the second heat generator
+  (booster heater), most likely hours; to be compared with the booster heater stages over a few days.
+- INFO_TYP (0x019C, boiler) alternates between 129 and 193 (bit 0x40, 4 changes a day) – open.
+- SOFTWARE_NUMMER (0x0199) of the heat module alternates between 446 and 70 (1193 changes a day) while 0x019A
+  stays 4 – two different answers to the same request; open.
+- BETRIEBS_STATUS (0x0176) and PUMPENSTATUS (0x01D2) as known; the setting registers stay constant.
+
+**Open:** FE07/FE1B/FE09 units; candidates for regular metrics: diverter valve (0xFE1D) and heating element mask
+(0xFE1E), once confirmed over a few days.
