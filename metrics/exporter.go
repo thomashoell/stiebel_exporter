@@ -91,6 +91,7 @@ func New(reg prometheus.Registerer, bus stiebel.Publisher, logger *slog.Logger, 
 	if e.testInterval > 0 {
 		listenOnly := newTestUnits()
 		e.units = append(e.units, listenOnly...)
+		e.units = append(e.units, newPolledTestUnit())
 		testValues := newTestValues()
 		for _, u := range e.units {
 			if slices.Contains(testUnits, u.name) {
@@ -145,6 +146,13 @@ func (e *Exporter) HandleFrame(frm can.Frame) {
 	setter, ok := u.setters[msg.Index]
 	if !ok {
 		logger.Debug("index not exported", "frame", stiebel.FormatFrame(frm))
+		return
+	}
+	// The same index can answer differently depending on who asks: the heat module reports SOFTWARE_NUMMER 446 to
+	// the exporter and 70 to the manager, which polls it every 10 s (candump 2026-11-28). Indexes the exporter
+	// requests itself therefore only take the answers addressed to it; others are still picked up passively.
+	if msg.Receiver != stiebel.PC && u.requests(msg.Index) {
+		logger.Debug("ignoring response to another participant", "receiver", fmt.Sprintf("0x%03X", msg.Receiver))
 		return
 	}
 

@@ -298,11 +298,70 @@ manager.
 Other test registers:
 
 - LAUFZEIT_2WE (0x01CB, manager) = 452 → 453 within the day – a run-time counter of the second heat generator
-  (booster heater), most likely hours; to be compared with the booster heater stages over a few days.
-- INFO_TYP (0x019C, boiler) alternates between 129 and 193 (bit 0x40, 4 changes a day) – open.
+  (booster heater), most likely hours (see 2026-11-28).
+- INFO_TYP (0x019C, boiler) alternates between 129 and 193 (bit 0x40, 4 changes a day) – see 2026-11-28.
 - SOFTWARE_NUMMER (0x0199) of the heat module alternates between 446 and 70 (1193 changes a day) while 0x019A
   stays 4 – two different answers to the same request; open.
 - BETRIEBS_STATUS (0x0176) and PUMPENSTATUS (0x01D2) as known; the setting registers stay constant.
 
 **Open:** FE07/FE1B/FE09 units; candidates for regular metrics: diverter valve (0xFE1D) and heating element mask
 (0xFE1E), once confirmed over a few days.
+
+### 2026-11-28: Two days of test registers
+
+48 h (2026-11-26/27, 1-minute steps):
+
+- **0xFE1D (0x700) = diverter valve** confirmed: > 50 exactly during hot water charges (1 deviation in 2881
+  minutes, timing). **0xFE1E (0x700) = heating element bit mask** confirmed: 0/1/3/7 for 0–3 booster stages
+  without a single deviation. Both are ready to become regular metrics.
+- **INFO_TYP (0x019C, boiler) bit 0x40 = booster heater on**: 129 → 193 at the start of both booster runs
+  (26.11. 22:08, 27.11. 06:37 – hot water charges at −3.2/−1.6 °C) and back to 129 at their end (22:24, 06:49).
+- **LAUFZEIT_2WE (0x01CB) counts hours**: the only step (452 → 453) came at 26.11. 23:10, after the 16-minute run
+  at 22:08; 27 booster minutes in 48 h in total – consistent with an hour counter that keeps the fraction
+  internally.
+- SOFTWARE_NUMMER of the heat module: 70 in ~87 % of the polls, 446 in ~13 %, independent of the state (heating,
+  standby, hot water) and without a pattern. **Cause (candump 2026-11-28):** the answer depends on who asks.
+  The manager polls 0x0199 from 0x500 every 10 s (`480#A100FA01990000`) and gets **70**
+  (`500#9200FA01990046`); the exporter gets **446** (`500#D200FA019901BE`). The exporter picked up every response
+  passively, so the manager's answers overwrote its own. Fix: for indexes the exporter requests itself, only
+  responses addressed to 0x680 count; other indexes and the listen-only units are still picked up passively.
+  What 70 means to the manager is open. Opening the bus participants menu on the panel sent no request – the
+  panel apparently shows values the manager already has.
+- 0xFE07, 0xFE1B and 0xFE09 within heating cycles: only weak correlations with fan, flow temperature and spread
+  (|r| ≤ 0.43) – no known metric explains them. 0xFE07 stays the flow rate candidate (no flow metric to compare
+  with). 0xFE4C stays 18.
+
+### 2026-11-28: Panel menu "Analyse Wärmepumpe" (expansion valve, inverter)
+
+The panel (Hauptmenü › Diagnose › Analyse Wärmepumpe) shows 13 values on three pages. candump while paging
+through it: the panel reads them from **0x514** – a participant that never showed up before and answers requests
+(probably a second address of the heat module). Mapped by value (photos and candump a few minutes apart, a
+defrost started during the candump, so the valve values differed):
+
+| Index | can_progs name | Panel | Scale | candump / photo |
+|---|---|---|---|---|
+| 0x07F3 | SOLLWERT_UEBERHITZUNG | Soll-Überhitzung | 0.1 K | 68, 69 / 6.4 °C |
+| 0x07F4 | ISTWERT_UEBERHITZUNG_VERDAMPFER | Ist-Überhitzung-V | 0.1 K | 17, −202 / 6.2 °C |
+| 0x033D | INTEGRAL_REGELABWEICHUNG | Regelabweichung | 0.1 K | −51, −271 / −0.1 K – equals actual − set point (1.7 − 6.8, −20.2 − 6.9) |
+| 0x07F7 | P_ANTEIL_EXV | P-Faktor | 0.01 | 86, 100 / 0.99 |
+| 0x07F8 | I_ANTEIL_EXV | I-Faktor | 0.01 | 82, 100 / 0.82 |
+| 0x07F9 | D_ANTEIL_EXV | D-Faktor | 0.01 | 100 / 1.00 |
+| 0x07F6 | VORSTEUER_OEFFNUNGSGRAD | Vorsteuer-Öffnungsgrad EXV | 0.1 % | 80 / 25.9 % |
+| 0x07CA | EXV_OEFFNUNGSGRAD | Öffnungsgrad EXV | 0.1 % | 70 / 21.1 % |
+| 0xC1E6 | – | Umgebungstemperatur INV | 0.1 °C | 362 / 36.1 °C |
+| 0xC1E7 | – | Temperatur INV-Verdichter | 0.1 °C | 441 / 43.8 °C |
+| 0xC2C2 | – | Temperatur INV-Lüfter | 0.1 °C | 377 / 37.8 °C |
+| 0xC2C3 | – | Öffnungsgrad Bypassventil | 0.1 % | 157 / 15.6 % |
+| 0x06B4 | TEST_OBJEKT_115 | Strom Motor | 0.1 A | 82 / 8.2 A |
+
+This also explains 0x033D (test value of the heat module since 2026-11-24): it is the control deviation of the
+superheat controller of the electronic expansion valve, not an integral.
+
+Seen in the same candump: 0x500 **writes** to the manager every ~2 s – 0x0A36 ("EINGANG14", fell from 48.4 to 34.2
+during the defrost), and at the start of the defrost 0x0060, 0x0067, 0x07F2 (BETRIEBSART_WP = 1), 0x068D, 0xC2C4.
+The panel reads the operating mode and 0x0122–0x0126 from the manager and 0x011A, 0x000C, 0x000E, 0x0016 from the
+boiler for its start screen.
+
+Next: the 13 indexes are test values (heat module and 0x514) to see which address answers and whether the scaling
+holds over heating cycles and defrosts. Candidates for regular metrics: motor current, EXV opening, superheat,
+inverter temperatures.

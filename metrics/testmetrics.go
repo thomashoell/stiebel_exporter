@@ -19,7 +19,7 @@ import (
 // and 0x0118 don't answer. WW_ECO is still open (false in Eco-Betrieb).
 var testIndexes = []uint16{
 	0x0176, // BETRIEBS_STATUS (bit field, 65 during a heating cycle)
-	0x033D, // INTEGRAL_REGELABWEICHUNG
+	0x033D, // INTEGRAL_REGELABWEICHUNG – 0.1 K, superheat actual − set point (panel "Regelabweichung", 2026-11-28)
 	0x063F, // ISTDREHZAHL_VERDICHTER_2 (not the speed, no regular metric any more)
 	0x027E, // WW_ECO
 	// 2026-11-26: booster heater – bits 0x40/0x80 of 0x07A8 became stiebel_booster_heater_stages; 0x0137
@@ -56,15 +56,35 @@ var testIndexes = []uint16{
 	0x05A0, // "NHZ_ANZAHL_STUFEN", answers 60 = NHZ delay heating (min)
 	0x059F, // "FUSSPUNKT_HEIZKURVE" – the number of stages (3) if the table is shifted by one?
 	0x05A2, // "NHZ_LEISTUNG1"
+	// 2026-11-28: panel menu Diagnose › Analyse Wärmepumpe – the panel (0x100) reads these from 0x514 (candump);
+	// mapped to the panel by value: superheat control of the expansion valve, inverter temperatures, motor current.
+	0x07F3, // SOLLWERT_UEBERHITZUNG (0.1 K, panel "Soll-Überhitzung")
+	0x07F4, // ISTWERT_UEBERHITZUNG_VERDAMPFER (0.1 K, "Ist-Überhitzung-V")
+	0x07F6, // VORSTEUER_OEFFNUNGSGRAD (0.1 %, "Vorsteuer-Öffnungsgrad EXV")
+	0x07F7, // P_ANTEIL_EXV (0.01, "P-Faktor")
+	0x07F8, // I_ANTEIL_EXV (0.01, "I-Faktor")
+	0x07F9, // D_ANTEIL_EXV (0.01, "D-Faktor")
+	0x07CA, // EXV_OEFFNUNGSGRAD (0.1 %, "Öffnungsgrad EXV")
+	0xC1E6, // 0.1 °C, "Umgebungstemperatur INV"
+	0xC1E7, // 0.1 °C, "Temperatur INV-Verdichter"
+	0xC2C2, // 0.1 °C, "Temperatur INV-Lüfter"
+	0xC2C3, // 0.1 %, "Öffnungsgrad Bypassventil"
+	0x06B4, // "TEST_OBJEKT_115": 0.1 A, "Strom Motor"
 }
 
 // testUnits are the units asked for the test indexes; the manager is not polled for the regular metrics.
-var testUnits = []string{"boiler", "heater", "manager", "0x100", "0x700"}
+var testUnits = []string{"boiler", "heater", "manager", "0x100", "0x700", "0x514"}
 
 // newTestUnits returns the bus participants that only exist for test metrics: seen on the bus (candump 2026-11-26)
 // but not identified yet – 0x100 reads values from the boiler (probably the FES remote control), 0x700 answers the
 // manager (probably the MFG multi-function group or the outdoor unit). They are named after their CAN ID until they
 // are identified, and they are not asked: they don't answer requests, their responses to others are picked up.
+// newPolledTestUnit returns 0x514: the panel reads the heat pump analysis values from it (candump 2026-11-28), so
+// it answers requests; probably a second address of the heat module.
+func newPolledTestUnit() *unit {
+	return newUnit("0x514", 0x514)
+}
+
 func newTestUnits() []*unit {
 	return []*unit{newUnit("0x100", 0x100), newUnit("0x700", stiebel.Fremdgeraet)}
 }

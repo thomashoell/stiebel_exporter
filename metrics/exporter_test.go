@@ -49,9 +49,15 @@ func newTestExporter(t *testing.T, bus stiebel.Publisher) (*Exporter, *prometheu
 	return e, reg
 }
 
-// response builds a response frame of sender for index with the raw value v.
+// response builds a response frame of sender to the exporter for index with the raw value v.
 func response(sender uint16, index uint16, v uint16) can.Frame {
-	data, err := stiebel.ResponseData(stiebel.PC, &stiebel.ElsterReading{Index: index, Type: stiebel.TypeNone}, float64(int16(v)))
+	return responseTo(stiebel.PC, sender, index, v)
+}
+
+// responseTo builds a response frame of sender to receiver for index with the raw value v.
+func responseTo(receiver, sender uint16, index uint16, v uint16) can.Frame {
+	data, err := stiebel.ResponseData(receiver, &stiebel.ElsterReading{Index: index, Type: stiebel.TypeNone},
+		float64(int16(v)))
 	if err != nil {
 		panic(err)
 	}
@@ -146,6 +152,8 @@ func TestHandleFrameIgnored(t *testing.T) {
 		{"index not exported", response(stiebel.Kessel, 0x0002, 100), 1},
 		{"no value", response(stiebel.Kessel, 0x000C, 0x8000), 1},
 		{"index exported by another unit", response(stiebel.Heizmodul, 0x000C, 100), 1},
+		// polled by the exporter: only the answers to the exporter count
+		{"polled index answered to the manager", responseTo(stiebel.Manager, stiebel.Kessel, 0x000C, 100), 1},
 	}
 
 	for _, tt := range tests {
@@ -366,8 +374,8 @@ func TestTestMetrics(t *testing.T) {
 	regular := len(bus.frames)
 
 	e.PollTest(context.Background())
-	// boiler, heater and manager are asked; 0x100 and 0x700 are only listened to
-	if got, want := len(bus.frames)-regular, len(testIndexes)*3-1; got != want {
+	// boiler, heater, manager and 0x514 are asked; 0x100 and 0x700 are only listened to
+	if got, want := len(bus.frames)-regular, len(testIndexes)*4-1; got != want {
 		t.Errorf("test poll sent %d requests, want %d", got, want)
 	}
 
@@ -426,13 +434,35 @@ func TestTestMetricsUnknownIndexAndTestUnit(t *testing.T) {
 	}
 
 	// 0x700 only exists as unit with test metrics; its responses to the manager are picked up as well
-	e.HandleFrame(response(stiebel.Fremdgeraet, 0xFE09, 215))
+	e.HandleFrame(responseTo(stiebel.Manager, stiebel.Fremdgeraet, 0xFE09, 215))
 
 	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "test_stiebel_register_value")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if want := `test_stiebel_register_value{index="0xFE09",name="",unit="0x700"} 215`; !strings.Contains(string(got), want+"\n") {
+		t.Errorf("expected %q in\n%s", want, got)
+	}
+}
+
+func TestTestMetricsIgnoreAnswersToOthers(t *testing.T) {
+	defer func(saved []uint16) { testIndexes = saved }(testIndexes)
+	testIndexes = []uint16{0x0199} // SOFTWARE_NUMMER
+	reg := prometheus.NewRegistry()
+	e, err := New(reg, &fakeBus{}, slog.New(slog.NewTextHandler(io.Discard, nil)), WithTestMetrics(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// the heat module answers the exporter 446 and the manager 70 (candump 2026-11-28)
+	e.HandleFrame(response(stiebel.Heizmodul, 0x0199, 446))
+	e.HandleFrame(responseTo(stiebel.Manager, stiebel.Heizmodul, 0x0199, 70))
+
+	got, err := testutil.CollectAndFormat(reg, expfmt.TypeTextPlain, "test_stiebel_register_value")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `index="0x0199",name="SOFTWARE_NUMMER",unit="heater"} 446`; !strings.Contains(string(got), want+"\n") {
 		t.Errorf("expected %q in\n%s", want, got)
 	}
 }
