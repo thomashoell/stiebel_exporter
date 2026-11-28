@@ -365,3 +365,12 @@ boiler for its start screen.
 Next: the 13 indexes are test values (heat module and 0x514) to see which address answers and whether the scaling
 holds over heating cycles and defrosts. Candidates for regular metrics: motor current, EXV opening, superheat,
 inverter temperatures.
+
+First minutes with 2.7.1-snapshot.c3e1d59 (filter for answers addressed to the exporter + the analysis indexes):
+
+- SOFTWARE_NUMMER of the heat module stays **446** – the alternation with 70 is gone.
+- The heat module (0x500) answers all 13 analysis indexes itself, with the same values as 0x514 (differences of
+  1–2 digits from the timing). 0x514 answers the manager's registers like the manager (software 390/13, the
+  bivalence settings) and the heat module's registers like the heat module – it looks like an address of the
+  WPM3 that passes requests on to the heat pump. Polling 0x514 is therefore redundant; it can be dropped from the
+  test units again.
