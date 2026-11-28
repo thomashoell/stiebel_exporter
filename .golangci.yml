@@ -36,6 +36,10 @@ linters:
       - path: stiebel/readings\.go
         linters:
           - misspell
+      # comments quote the German labels of the control panel (e.g. "Analyse Wärmepumpe")
+      - path: metrics/testmetrics\.go
+        linters:
+          - misspell
       - path: _test\.go
         linters:
           - gosec

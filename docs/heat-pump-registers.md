@@ -13,6 +13,23 @@ noted) so the history stays traceable.
   manager `0x480`. The exporter acts like ComfortSoft (`0x680`).
 - Set points (0x0002, 0x0003, 0x0005, 0x0112) answer identically from boiler and manager.
 - A response with value `0x8000` means "not available".
+- Bus participants (panel: Hauptmenü › Diagnose › System › Busteilnehmer): WPM3 software 390-13, FES 417-07, MFG 18,
+  WP1 446-04; heat pump type (… › Wärmepumpentypen): WPL 17 ACS classic, DIP 1.
+- candump 2026-11-26 (2 min): besides 0x180, 0x480, 0x500 and the exporter (0x680) two more senders – **0x100**
+  reads outdoor, tank and return temperature from the boiler and gets the time and settings from the manager
+  (probably the FES remote control), **0x700** answers the manager every 5 s on 0xFDF3–0xFE4C (values like
+  temperatures in 0.1 °C: 36.2, 28.0, 36.5, 2.7, 21.5 °C).
+- Software numbers (test poll 2026-11-26): 0x180 and 0x480 answer 390/13 (WPM3 390-13 – one device, two
+  addresses), 0x500 answers 446/4 (WP1 446-04). INFO_TYP (0x019C) boiler 129, GERAETE_KENNUNG (0x0148) heater 3;
+  GERAETE_ID (0x000B) unanswered. **0x100 and 0x700 don't answer requests** at all; 0x700's answers to the manager
+  are picked up passively.
+- 0x700, first values: 0xFDF3 40.0 and 0xFDF5 40.3 ≈ boiler flow 40.3 °C; 0xFDF4 32.5 matches nothing known;
+  0xFE07 2.8 vs. 1.9 °C outdoor at the boiler; 0xFE09 21.9; 0xFE4C 18. No mixer circuit, buffer tank or room
+  sensor known in the installation (Thomas). The boiler's outdoor temperature (0x000C) comes from the sensor on
+  the house wall at ~2.5 m; 0xFE07 could be a separate sensor at the heat pump itself (Thomas) – which suggests
+  0x700 might rather be the outdoor unit's (inverter) controller than the MFG. Superseded by one day of data:
+  0xFE07 is no temperature, 0x700 reports flow/return, diverter valve and heating elements (investigation
+  2026-11-27). 0x100 is the control panel (below).
 - **0x100 is the control panel** (most likely the FES in the list of bus participants): when the operating mode is
   changed on the panel, 0x100 writes PROGRAMMSCHALTER to the manager (`100#9000FA01120400` = write 0x0112 = 0x0400
   to 0x480), the manager passes it on to 0x100 and 0x519 (0x?19 look like group addresses), and the boiler reports
@@ -24,8 +41,8 @@ noted) so the history stays traceable.
 |---|---|---|---|
 | 0x0002 | KESSELSOLLTEMP | boiler | heating flow set point (heating curve), °C (dec) |
 | 0x0003 | SPEICHERSOLLTEMP | boiler | hot water set point, °C – most likely the **effective** one: 10 °C in Bereitschaftsbetrieb, 48 °C (Komfort) in Komfort- and Eco-Betrieb (see investigation 2026-11-26, Eco period of Programmbetrieb still to check) |
-| 0x0013 | EINSTELL_SPEICHERSOLLTEMP | boiler, manager | hot water set point of **Komfortbetrieb**, °C (dec); 48 °C as set on the panel (2026-11-25) |
-| 0x0A06 | EINSTELL_SPEICHERSOLLTEMP2 | boiler, manager | hot water set point of **Eco-Betrieb**, °C (dec); 47 °C as set on the panel (2026-11-25) |
+| 0x0013 | EINSTELL_SPEICHERSOLLTEMP | boiler, manager | hot water set point of **Komfortbetrieb**, °C (dec); 48 °C as set on the panel (2026-11-25); panel: Hauptmenü › Einstellungen › Warmwasser › Warmwassertemperatur › Komfort Temperatur |
+| 0x0A06 | EINSTELL_SPEICHERSOLLTEMP2 | boiler, manager | hot water set point of **Eco-Betrieb**, °C (dec); 47 °C as set on the panel (2026-11-25); panel: Hauptmenü › Einstellungen › Warmwasser › Warmwassertemperatur › Eco Temperatur |
 | 0x0005 | RAUMSOLLTEMP_I | boiler | room comfort set point, °C |
 | 0x000C | AUSSENTEMP | boiler | outdoor temperature, °C |
 | 0x0112 | PROGRAMMSCHALTER | boiler | operating mode, raw code; all six programs of the WPM verified (2026-11-25/26): 0x0000 = 0 **Notbetrieb**, 0x0100 = 256 **Bereitschaftsbetrieb**, 0x0200 = 512 **Programmbetrieb**, 0x0300 = 768 **Komfortbetrieb**, 0x0400 = 1024 **Eco-Betrieb**, 0x0500 = 1280 **Warmwasserbetrieb** (can_progs: Notbetrieb, Bereitschaft, Automatik, Tagbetrieb, Absenkbetrieb, Warmwasser). Eco-Betrieb lowered the heating flow set point from 35 to 32.1 °C; Bereitschaftsbetrieb and Warmwasserbetrieb set it to 7.9 °C (frost protection / heating off) |
@@ -205,3 +222,155 @@ point of 47 °C rather means: **Eco-Betrieb only lowers the heating, hot water s
 set point (0x0A06) probably applies in the Eco periods of Programmbetrieb. **Open:** confirm during an Eco period
 of Programmbetrieb (0x0003 should show 47 °C then). If confirmed, the "effective set point" logic of the web UI and
 the dashboard (Eco value in Eco-Betrieb) is wrong and 0x0003 should be shown instead.
+
+### 2026-11-26: When does the booster heater run? Bivalence point hot water
+
+Settings on the WPM (Thomas, 2026-11-26):
+
+| Setting | Hot water | Heating |
+|---|---|---|
+| Bivalence temperature | **−2 °C** | **−5 °C** |
+| Lower operating limit | −20 °C | −20 °C |
+| Number of stages (heating elements) | | 3 |
+| Delay | | 60 min |
+
+Heating: Hauptmenü › Einstellungen › Heizen › Elektrische Nacherwärmung (breadcrumb truncated on the display).
+
+Registers (test poll 2026-11-26, boiler and manager answer identically):
+
+| Index | can_progs name | Value | Setting |
+|---|---|---|---|
+| 0x01AC | BIVALENTPARALLELTEMPERATUR_HZG | −5.0 | bivalence temperature heating ✓ |
+| 0x01AD | BIVALENTPARALLELTEMPERATUR_WW | −2.0 | bivalence temperature hot water ✓ |
+| 0x01AE | BIVALENZALTERNATIVTEMPERATUR_HZG | −20.0 | lower operating limit heating ✓ |
+| 0x01AF | BIVALENZALTERNATIVTEMPERATUR_WW | −20.0 | lower operating limit hot water ✓ |
+| 0x05A0 | NHZ_ANZAHL_STUFEN | 60 | the **delay** (60 min), not the number of stages – the table is shifted by one here |
+| 0x059F | FUSSPUNKT_HEIZKURVE | 3 | the **number of stages** (3) – confirms the shift; 0x05A2 doesn't answer |
+
+No answer: 0x05A1 NHZ_VERZOEGERUNG, 0x0589 NHZ_VERZOEGERUNG_WW, 0x058B NHZ_ANZAHL_STUFEN_WW, 0x05A8/0x05A9
+LAUFZEIT_NHZ_WW/_HEIZEN.
+
+Heating: below −5 °C the heating elements may help, but only after the delay of 60 min. Consistent with the data:
+the outdoor temperature fell below −5 °C only briefly (minimum −5.7 °C on the morning of 2026-11-24, a few
+minutes) and the booster heater's heat for heating (WE2, component heat) stayed 0.
+
+All hot water charges 2026-11-20 … 26 against the outdoor temperature at their start: the three charges below −2 °C
+(23.11. 23:03 at −2.4 °C, 24.11. 23:39 at −4.4 °C, 26.11. 07:10 at −3.7 °C) ran with the heating elements, all 17
+charges at −0.9 … +6.4 °C without. Below the bivalence point the WPM adds the heating elements to the heat pump for
+hot water; the charges are shorter then (17–19 min instead of 30–45 min). Below −20 °C the elements would heat hot
+water alone. This explains the high hot water share of the booster heater counter (2.9 of 4.6 MWh since
+commissioning).
+
+The WPM's electrical energy counters (EL_AUFNAHMELEISTUNG_*) most likely don't include the heating elements: from
+12:15 to 13:15 on 2026-11-26 (Notbetrieb test) they rose by 0.93 kWh while the booster heater's heat (WE2, equal to
+its electrical energy) rose by 1.13 kWh – a single comparison so far. The dashboard adds WE2 to the electrical
+energy.
+
+Anti-legionella protection: no run visible in the data of 2026-11-07 … 26 (tank never above 50.2 °C, set point never
+above 48 °C). The control panel has no anti-legionella setting in the user menus (Thomas, 2026-11-26) – it is either
+in the installer level or a built-in function of the WPM. A weekly run (common: once a week to 60 °C, usually
+with the heating elements) would have shown up in these 19 days; so it is off, runs less often, or doesn't heat
+the tank sensor's zone. A trigger depending on the drawn volume (Thomas) is possible in principle, but the WPM has
+no flow meter for hot water – it could only estimate the draw from the charges or the temperature drop.
+**Open:** watch for a run (tank > 55 °C or heating elements without a cold start) over
+the next weeks.
+
+### 2026-11-27: What does 0x700 send? Test registers after one day
+
+24 h of test values (1-minute steps) correlated with the known metrics; the 0x700 values divided by 10:
+
+| Index (0x700) | Range (raw) | Behaviour | Interpretation |
+|---|---|---|---|
+| 0xFDF5 | 225–624 | equals the boiler flow temperature (r = 1.00, mean deviation 0.1 K) | **flow temperature** (copy) |
+| 0xFDF3 | 227–573 | follows the boiler flow (r = 0.99, 0.8 K) | a second flow temperature (sensor or smoothed value) |
+| 0xFDF4 | 276–451 | follows the heat pump return (r = 0.84, 2.4 K) | probably a **return temperature** |
+| 0xFE07 | 0–42 | 0 while the heating cycle is off, 25–35 while heating or charging hot water | **not** an outdoor temperature (the first value 2.8 was a coincidence); looks like a **flow rate** (unit unknown) |
+| 0xFE09 | 200–220 | 20.0–20.5 in standby, up to 22.0 while running | a temperature near the electronics/hydraulics (open) |
+| 0xFE1B | 0–100 | 100 in standby, 0 during hot water charges and defrosts, 0–74 while heating | a valve or pump in % (open) |
+| 0xFE1D | 1 / 98–100 | 1 while heating or in standby, **98 during every hot water charge** | **diverter valve** heating/hot water in % |
+| 0xFE1E | 0, 1, 3, 7 | 1/3/7 exactly with booster heater stages 1/2/3 | **heating elements as a bit mask** (one bit per element) |
+| 0xFE4C | 18 | constant | open |
+
+0x700 thus knows the flow and return, the diverter valve and the single heating elements – rather the hydraulic
+part (heat module / internal controller) than the outdoor unit or the MFG. Still listen-only: it only answers the
+manager.
+
+Other test registers:
+
+- LAUFZEIT_2WE (0x01CB, manager) = 452 → 453 within the day – a run-time counter of the second heat generator
+  (booster heater), most likely hours (see 2026-11-28).
+- INFO_TYP (0x019C, boiler) alternates between 129 and 193 (bit 0x40, 4 changes a day) – see 2026-11-28.
+- SOFTWARE_NUMMER (0x0199) of the heat module alternates between 446 and 70 (1193 changes a day) while 0x019A
+  stays 4 – two different answers to the same request; open.
+- BETRIEBS_STATUS (0x0176) and PUMPENSTATUS (0x01D2) as known; the setting registers stay constant.
+
+**Open:** FE07/FE1B/FE09 units; candidates for regular metrics: diverter valve (0xFE1D) and heating element mask
+(0xFE1E), once confirmed over a few days.
+
+### 2026-11-28: Two days of test registers
+
+48 h (2026-11-26/27, 1-minute steps):
+
+- **0xFE1D (0x700) = diverter valve** confirmed: > 50 exactly during hot water charges (1 deviation in 2881
+  minutes, timing). **0xFE1E (0x700) = heating element bit mask** confirmed: 0/1/3/7 for 0–3 booster stages
+  without a single deviation. Both are ready to become regular metrics.
+- **INFO_TYP (0x019C, boiler) bit 0x40 = booster heater on**: 129 → 193 at the start of both booster runs
+  (26.11. 22:08, 27.11. 06:37 – hot water charges at −3.2/−1.6 °C) and back to 129 at their end (22:24, 06:49).
+- **LAUFZEIT_2WE (0x01CB) counts hours**: the only step (452 → 453) came at 26.11. 23:10, after the 16-minute run
+  at 22:08; 27 booster minutes in 48 h in total – consistent with an hour counter that keeps the fraction
+  internally.
+- SOFTWARE_NUMMER of the heat module: 70 in ~87 % of the polls, 446 in ~13 %, independent of the state (heating,
+  standby, hot water) and without a pattern. **Cause (candump 2026-11-28):** the answer depends on who asks.
+  The manager polls 0x0199 from 0x500 every 10 s (`480#A100FA01990000`) and gets **70**
+  (`500#9200FA01990046`); the exporter gets **446** (`500#D200FA019901BE`). The exporter picked up every response
+  passively, so the manager's answers overwrote its own. Fix: for indexes the exporter requests itself, only
+  responses addressed to 0x680 count; other indexes and the listen-only units are still picked up passively.
+  What 70 means to the manager is open. Opening the bus participants menu on the panel sent no request – the
+  panel apparently shows values the manager already has.
+- 0xFE07, 0xFE1B and 0xFE09 within heating cycles: only weak correlations with fan, flow temperature and spread
+  (|r| ≤ 0.43) – no known metric explains them. 0xFE07 stays the flow rate candidate (no flow metric to compare
+  with). 0xFE4C stays 18.
+
+### 2026-11-28: Panel menu "Analyse Wärmepumpe" (expansion valve, inverter)
+
+The panel (Hauptmenü › Diagnose › Analyse Wärmepumpe) shows 13 values on three pages. candump while paging
+through it: the panel reads them from **0x514** – a participant that never showed up before and answers requests
+(probably a second address of the heat module). Mapped by value (photos and candump a few minutes apart, a
+defrost started during the candump, so the valve values differed):
+
+| Index | can_progs name | Panel | Scale | candump / photo |
+|---|---|---|---|---|
+| 0x07F3 | SOLLWERT_UEBERHITZUNG | Soll-Überhitzung | 0.1 K | 68, 69 / 6.4 °C |
+| 0x07F4 | ISTWERT_UEBERHITZUNG_VERDAMPFER | Ist-Überhitzung-V | 0.1 K | 17, −202 / 6.2 °C |
+| 0x033D | INTEGRAL_REGELABWEICHUNG | Regelabweichung | 0.1 K | −51, −271 / −0.1 K – equals actual − set point (1.7 − 6.8, −20.2 − 6.9) |
+| 0x07F7 | P_ANTEIL_EXV | P-Faktor | 0.01 | 86, 100 / 0.99 |
+| 0x07F8 | I_ANTEIL_EXV | I-Faktor | 0.01 | 82, 100 / 0.82 |
+| 0x07F9 | D_ANTEIL_EXV | D-Faktor | 0.01 | 100 / 1.00 |
+| 0x07F6 | VORSTEUER_OEFFNUNGSGRAD | Vorsteuer-Öffnungsgrad EXV | 0.1 % | 80 / 25.9 % |
+| 0x07CA | EXV_OEFFNUNGSGRAD | Öffnungsgrad EXV | 0.1 % | 70 / 21.1 % |
+| 0xC1E6 | – | Umgebungstemperatur INV | 0.1 °C | 362 / 36.1 °C |
+| 0xC1E7 | – | Temperatur INV-Verdichter | 0.1 °C | 441 / 43.8 °C |
+| 0xC2C2 | – | Temperatur INV-Lüfter | 0.1 °C | 377 / 37.8 °C |
+| 0xC2C3 | – | Öffnungsgrad Bypassventil | 0.1 % | 157 / 15.6 % |
+| 0x06B4 | TEST_OBJEKT_115 | Strom Motor | 0.1 A | 82 / 8.2 A |
+
+This also explains 0x033D (test value of the heat module since 2026-11-24): it is the control deviation of the
+superheat controller of the electronic expansion valve, not an integral.
+
+Seen in the same candump: 0x500 **writes** to the manager every ~2 s – 0x0A36 ("EINGANG14", fell from 48.4 to 34.2
+during the defrost), and at the start of the defrost 0x0060, 0x0067, 0x07F2 (BETRIEBSART_WP = 1), 0x068D, 0xC2C4.
+The panel reads the operating mode and 0x0122–0x0126 from the manager and 0x011A, 0x000C, 0x000E, 0x0016 from the
+boiler for its start screen.
+
+Next: the 13 indexes are test values (heat module and 0x514) to see which address answers and whether the scaling
+holds over heating cycles and defrosts. Candidates for regular metrics: motor current, EXV opening, superheat,
+inverter temperatures.
+
+First minutes with 2.7.1-snapshot.c3e1d59 (filter for answers addressed to the exporter + the analysis indexes):
+
+- SOFTWARE_NUMMER of the heat module stays **446** – the alternation with 70 is gone.
+- The heat module (0x500) answers all 13 analysis indexes itself, with the same values as 0x514 (differences of
+  1–2 digits from the timing). 0x514 answers the manager's registers like the manager (software 390/13, the
+  bivalence settings) and the heat module's registers like the heat module – it looks like an address of the
+  WPM3 that passes requests on to the heat pump. Polling 0x514 is therefore redundant; it can be dropped from the
+  test units again.

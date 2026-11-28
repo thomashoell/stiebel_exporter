@@ -89,11 +89,18 @@ func New(reg prometheus.Registerer, bus stiebel.Publisher, logger *slog.Logger, 
 
 	collectors := append(g.collectors(), e.responses, e.lastResponse, e.publishErrors)
 	if e.testInterval > 0 {
+		listenOnly := newTestUnits()
+		e.units = append(e.units, listenOnly...)
+		e.units = append(e.units, newPolledTestUnit())
 		testValues := newTestValues()
 		for _, u := range e.units {
 			if slices.Contains(testUnits, u.name) {
 				u.addTestIndexes(testValues)
 			}
+		}
+		// they don't answer requests (2026-11-26): only their responses to other participants are picked up
+		for _, u := range listenOnly {
+			u.testPolled = nil
 		}
 		collectors = append(collectors, testValues)
 	}
@@ -129,20 +136,27 @@ func (e *Exporter) HandleFrame(frm can.Frame) {
 
 	logger := e.logger.With("unit", u.name, "index", formatIndex(msg.Index))
 
-	r := stiebel.Reading(msg.Index)
-	if r == nil {
-		logger.Debug("unknown index", "frame", stiebel.FormatFrame(frm))
-		return
+	// indexes missing in the Elster table are only exported as test values, decoded as plain 16 bit integers
+	typ := stiebel.TypeNone
+	if r := stiebel.Reading(msg.Index); r != nil {
+		typ = r.Type
+		logger = logger.With("name", r.Name)
 	}
-	logger = logger.With("name", r.Name)
 
 	setter, ok := u.setters[msg.Index]
 	if !ok {
 		logger.Debug("index not exported", "frame", stiebel.FormatFrame(frm))
 		return
 	}
+	// The same index can answer differently depending on who asks: the heat module reports SOFTWARE_NUMMER 446 to
+	// the exporter and 70 to the manager, which polls it every 10 s (candump 2026-11-28). Indexes the exporter
+	// requests itself therefore only take the answers addressed to it; others are still picked up passively.
+	if msg.Receiver != stiebel.PC && u.requests(msg.Index) {
+		logger.Debug("ignoring response to another participant", "receiver", fmt.Sprintf("0x%03X", msg.Receiver))
+		return
+	}
 
-	val, err := stiebel.DecodeFloat(msg.Value, r.Type)
+	val, err := stiebel.DecodeFloat(msg.Value, typ)
 	if errors.Is(err, stiebel.ErrNoValue) {
 		logger.Debug("heat pump has no value")
 		return

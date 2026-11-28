@@ -3,6 +3,7 @@ package metrics
 import (
 	"math"
 	"math/bits"
+	"slices"
 
 	"github.com/prometheus/client_golang/prometheus"
 
@@ -290,7 +291,8 @@ type unit struct {
 	// polled lists the Elster indexes requested from this unit in every poll cycle.
 	polled []uint16
 	// setters maps the Elster indexes in responses of this unit to metrics. Responses to indexes that are
-	// not polled are exported too, e.g. if another participant (ComfortSoft) requested them.
+	// not polled are exported too, e.g. if another participant (ComfortSoft) requested them; for polled indexes
+	// only the responses to the exporter count (see requests).
 	setters map[uint16]setter
 	// testPolled lists the test indexes requested from this unit, see testIndexes.
 	testPolled []uint16
@@ -406,4 +408,9 @@ func (u *unit) add(poll bool, setters ...indexSetter) {
 			u.polled = append(u.polled, s.index)
 		}
 	}
+}
+
+// requests reports whether the exporter requests index from this unit itself (regular or test poll).
+func (u *unit) requests(index uint16) bool {
+	return slices.Contains(u.polled, index) || slices.Contains(u.testPolled, index)
 }
